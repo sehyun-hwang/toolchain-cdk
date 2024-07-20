@@ -1,7 +1,4 @@
 /* eslint-disable no-new */
-/* eslint-disable import/prefer-default-export */
-
-// https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
 
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -18,8 +15,12 @@ import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns'
 import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Duration } from 'aws-cdk-lib';
 
+/**
+ * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
+ */
 export default class HelloEcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -71,16 +72,23 @@ export default class HelloEcsStack extends cdk.Stack {
       'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
     );
 
+    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
+      directory: 'webhook',
+    });
     const loadBalancedEcsService = new ApplicationLoadBalancedEc2Service(this, 'Service', {
       taskImageOptions: {
-        image: ecs.ContainerImage.fromRegistry('traefik/whoami'),
-        // containerPort: 9000,
+        image: ecs.ContainerImage.fromDockerImageAsset(asset),
+        containerPort: 9000,
       },
       cluster,
       memoryLimitMiB: 512,
       protocol: ApplicationProtocol.HTTPS,
-      // redirectHTTP: true,
+      redirectHTTP: true,
       certificate,
+    });
+    loadBalancedEcsService.taskDefinition.addContainer('WhoamiContainer', {
+      image: ecs.ContainerImage.fromRegistry('traefik/whoami'),
+      memoryLimitMiB: 512,
     });
 
     autoScalingGroup.connections.allowFrom(loadBalancedEcsService.loadBalancer, Port.allTcp());
