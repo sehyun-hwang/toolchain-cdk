@@ -3,7 +3,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import { AutoScalingGroup, HealthCheck } from 'aws-cdk-lib/aws-autoscaling';
+import { AutoScalingGroup, GroupMetrics } from 'aws-cdk-lib/aws-autoscaling';
 import {
   InstanceArchitecture,
   InstanceClass,
@@ -16,7 +16,6 @@ import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
-import { Duration } from 'aws-cdk-lib';
 
 /**
  * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
@@ -43,13 +42,7 @@ export default class HelloEcsStack extends cdk.Stack {
       maxCapacity: 3,
       minCapacity: 1,
       spotPrice: '0.007', // $0.0032 per Hour when writing, $0.0084 per Hour on-demand
-      healthCheck: HealthCheck.ec2(),
-    });
-
-    autoScalingGroup.scaleOnCpuUtilization('CpuScaling', {
-      targetUtilizationPercent: 50,
-      cooldown: Duration.minutes(1),
-      estimatedInstanceWarmup: Duration.minutes(1),
+      groupMetrics: [GroupMetrics.all()],
     });
 
     const asgCapacityProviderName = new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
@@ -75,20 +68,34 @@ export default class HelloEcsStack extends cdk.Stack {
     const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
       directory: 'webhook',
     });
+
     const loadBalancedEcsService = new ApplicationLoadBalancedEc2Service(this, 'Service', {
       taskImageOptions: {
         image: ecs.ContainerImage.fromDockerImageAsset(asset),
+        containerName: 'stress-webhook',
         containerPort: 9000,
       },
       cluster,
-      memoryLimitMiB: 512,
+      memoryLimitMiB: 256,
       protocol: ApplicationProtocol.HTTPS,
       redirectHTTP: true,
       certificate,
+      circuitBreaker: {
+        rollback: true,
+      },
     });
-    loadBalancedEcsService.taskDefinition.addContainer('WhoamiContainer', {
+    loadBalancedEcsService.taskDefinition.addContainer('whoami', {
       image: ecs.ContainerImage.fromRegistry('traefik/whoami'),
-      memoryLimitMiB: 512,
+      memoryLimitMiB: 256,
+      // @ts-expect-error protected
+      logging: loadBalancedEcsService.createAWSLogDriver(loadBalancedEcsService.node.id),
+    });
+
+    loadBalancedEcsService.service.autoScaleTaskCount({
+      minCapacity: 1,
+      maxCapacity: 20,
+    }).scaleOnCpuUtilization('CpuScaling', {
+      targetUtilizationPercent: 50,
     });
 
     autoScalingGroup.connections.allowFrom(loadBalancedEcsService.loadBalancer, Port.allTcp());
