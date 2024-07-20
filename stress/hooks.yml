@@ -1,0 +1,21 @@
+- id: stress
+  execute-command: flock
+  pass-arguments-to-command:
+    - source: string
+      name: --verbose
+    - source: string
+      name: stress.lock
+    - source: string
+      name: stress-ng
+    - source: string
+      name: -v
+    - source: string
+      name: -c
+    - source: string
+      name: '1'
+    - source: string
+      name: -t
+    - source: url
+      name: time
+  include-command-output-in-response: true
+  include-command-output-in-response-on-error: true
