@@ -19,3 +19,18 @@
       name: time
   include-command-output-in-response: true
   include-command-output-in-response-on-error: true
+
+- id: whoami
+  execute-command: curl
+  pass-arguments-to-command:
+    - source: string
+      name: -vfH
+    - source: string
+      name: 'Content-Type: application/json'
+    - source: string
+      name: localhost
+    - source: string
+      name: -d
+    - source: entire-headers
+  include-command-output-in-response: true
+  include-command-output-in-response-on-error: true
