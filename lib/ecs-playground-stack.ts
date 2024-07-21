@@ -16,6 +16,7 @@ import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
 
 /**
  * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
@@ -45,19 +46,26 @@ export default class HelloEcsStack extends cdk.Stack {
       groupMetrics: [GroupMetrics.all()],
     });
 
-    const asgCapacityProviderName = new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
+    const capacityProviderName = 'prefix-' + cdk.Names.nodeUniqueId(new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
       value: '',
-    });
+    }).node);
     const capacityProvider = new ecs.AsgCapacityProvider(this, 'AsgCapacityProvider', {
-      capacityProviderName: 'prefix-' + cdk.Names.nodeUniqueId(asgCapacityProviderName.node),
+      capacityProviderName,
       autoScalingGroup,
       machineImageType: ecs.MachineImageType.BOTTLEROCKET,
     });
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
+      containerInsights: true,
     });
-    cluster.addAsgCapacityProvider(capacityProvider);
+    cluster.addAsgCapacityProvider(capacityProvider, {
+      spotInstanceDraining: true,
+    });
+
+    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
+      directory: 'webhook',
+    });
 
     const certificate = Certificate.fromCertificateArn(
       this,
@@ -65,11 +73,8 @@ export default class HelloEcsStack extends cdk.Stack {
       'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
     );
 
-    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
-      directory: 'webhook',
-    });
-
     const loadBalancedEcsService = new ApplicationLoadBalancedEc2Service(this, 'Service', {
+      // Task
       taskImageOptions: {
         image: ecs.ContainerImage.fromDockerImageAsset(asset),
         containerName: 'stress-webhook',
@@ -77,13 +82,29 @@ export default class HelloEcsStack extends cdk.Stack {
       },
       cluster,
       memoryLimitMiB: 256,
+
+      // Internet-facing
       protocol: ApplicationProtocol.HTTPS,
       redirectHTTP: true,
       certificate,
+      domainName: 'elb.hwangsehyun.com',
+      domainZone: PublicHostedZone.fromPublicHostedZoneAttributes(this, 'HostedZone', {
+        hostedZoneId: 'Z08913012TPEI07HRGWDQ',
+        zoneName: 'hwangsehyun.com',
+      }),
+
+      // Scaling
       circuitBreaker: {
         rollback: true,
       },
+      capacityProviderStrategies: [{
+        capacityProvider: capacityProvider.capacityProviderName,
+        weight: 1,
+      }],
+      enableECSManagedTags: true,
     });
+
+    // Task
     loadBalancedEcsService.taskDefinition.addContainer('whoami', {
       image: ecs.ContainerImage.fromRegistry('traefik/whoami'),
       memoryLimitMiB: 256,
@@ -91,13 +112,16 @@ export default class HelloEcsStack extends cdk.Stack {
       logging: loadBalancedEcsService.createAWSLogDriver(loadBalancedEcsService.node.id),
     });
 
+    // Scalling
     loadBalancedEcsService.service.autoScaleTaskCount({
       minCapacity: 1,
       maxCapacity: 20,
     }).scaleOnCpuUtilization('CpuScaling', {
-      targetUtilizationPercent: 50,
+      targetUtilizationPercent: 40,
     });
+    loadBalancedEcsService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '0');
 
+    // Security
     autoScalingGroup.connections.allowFrom(loadBalancedEcsService.loadBalancer, Port.allTcp());
     loadBalancedEcsService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
   }
