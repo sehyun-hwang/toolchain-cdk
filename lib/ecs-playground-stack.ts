@@ -3,6 +3,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import { ApplicationProtocol, type ApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { AutoScalingGroup, GroupMetrics } from 'aws-cdk-lib/aws-autoscaling';
 import {
   InstanceArchitecture,
@@ -12,7 +13,6 @@ import {
   Port,
 } from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
-import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
@@ -22,6 +22,8 @@ import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
  * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
  */
 export default class HelloEcsStack extends cdk.Stack {
+  listener: ApplicationListener;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -103,6 +105,7 @@ export default class HelloEcsStack extends cdk.Stack {
       }],
       enableECSManagedTags: true,
     });
+    this.listener = loadBalancedEcsService.listener;
 
     // Task
     loadBalancedEcsService.taskDefinition.addContainer('whoami', {
