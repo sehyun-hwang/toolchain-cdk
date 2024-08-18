@@ -13,12 +13,24 @@
  * language governing permissions and limitations under the License.
  */
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+// import react from "@vitejs/plugin-react";
+import preact from "@preact/preset-vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
     sourcemap: true,
   },
-  plugins: [react()],
+  plugins: [
+    // react(),
+    preact(),
+  ],
+  resolve: {
+    alias: [
+      {
+        find: "@tty-share",
+        replacement: '/home/hwanghyun3/toolchain-cdk/amazon-cognito-passwordless-auth/end-to-end-example/client/node_modules/tty-share.git/server/frontend/tty-share',
+      },
+    ],
+  },
 });

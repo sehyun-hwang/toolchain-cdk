@@ -12,8 +12,8 @@
  * ANY KIND, either express or implied. See the License for the specific
  * language governing permissions and limitations under the License.
  */
-import React from "react";
-import ReactDOM from "react-dom/client";
+// import React from "react";
+// import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { Passwordless } from "amazon-cognito-passwordless-auth";
@@ -24,14 +24,15 @@ import {
 } from "amazon-cognito-passwordless-auth/react";
 import "amazon-cognito-passwordless-auth/passwordless.css";
 import "@cloudscape-design/global-styles/index.css";
+import { render } from 'preact';
 
 console.debug("App built at:", import.meta.env.VITE_APP_BUILD_DATE);
 
 Passwordless.configure({
-  cognitoIdpEndpoint: import.meta.env.VITE_COGNITO_IDP_ENDPOINT,
-  clientId: import.meta.env.VITE_CLIENT_ID,
+  cognitoIdpEndpoint: 'ap-northeast-1',
+  clientId: '69v2rfdafphstpehrkrobmrkn2',
   fido2: {
-    baseUrl: import.meta.env.VITE_FIDO2_BASE_URL,
+    baseUrl: 'https://ygaiuupzt3.execute-api.ap-northeast-1.amazonaws.com/v1/',
     authenticatorSelection: {
       userVerification: "required",
     },
@@ -39,7 +40,7 @@ Passwordless.configure({
   debug: console.debug,
 });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+render(
   <PasswordlessContextProvider enableLocalUserCache={true}>
     <PasswordlessComponent
       brand={{
@@ -50,10 +51,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1280px-Amazon_Web_Services_Logo.svg.png",
       }}
     >
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
+      {/*<React.StrictMode>*/}
+      <App />
+      {/*</React.StrictMode>*/}
     </PasswordlessComponent>
     <Fido2Toast /> {/* Add Fido2Toast below App so it is rendered on top */}
   </PasswordlessContextProvider>
-);
+  , document.getElementById("root") as HTMLElement);

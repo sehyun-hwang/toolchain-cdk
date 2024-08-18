@@ -13,9 +13,16 @@
  * language governing permissions and limitations under the License.
  */
 import "./App.css";
+import "xterm/css/xterm.css";
+
 import { usePasswordless } from "amazon-cognito-passwordless-auth/react";
 import StepUpAuth from "./StepUpAuth";
-import { useState } from "react";
+// import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'preact/hooks';
+
+import terminalProps from './terminal';
+
+const { Terminal } = window.ttyd_terminal;
 
 function App() {
   const {
@@ -33,6 +40,9 @@ function App() {
     <div className="app">
       <div>This YOUR app</div>
       <div>Hi there {tokensParsed?.idToken.email}</div>
+
+      <Terminal {...terminalProps} />
+
       <button
         onClick={() => {
           signOut();
