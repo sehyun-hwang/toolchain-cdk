@@ -59,8 +59,10 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       logLevel: 'DEBUG',
     });
 
-    const fido2NotificationFunction = this.passwordless.fido2NotificationFn as NodejsFunction;
-    fido2NotificationFunction.addEnvironment('AWS_ENDPOINT_URL_SES', props.botUrl);
+    ([
+      this.passwordless.createAuthChallengeFn,
+      this.passwordless.fido2NotificationFn,
+    ] as NodejsFunction[]).forEach(fn => fn.addEnvironment('AWS_ENDPOINT_URL_SES', props.botUrl));
 
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.passwordless.userPool.userPoolId,
