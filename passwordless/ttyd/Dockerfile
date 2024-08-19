@@ -6,7 +6,8 @@ COPY .yarn .yarn
 
 RUN corepack enable \
 	&& corepack prepare yarn@stable --activate \
-	&& yarn
+	&& yarn add serve \
+	&& yarn cache clean
 
 COPY . ./
 
@@ -16,3 +17,5 @@ RUN sed -i \
 	webpack.config.js
 
 RUN NODE_ENV=production yarn webpack
+
+CMD ["node_modules/.bin/serve", "-Cp", "9000", "dist"]

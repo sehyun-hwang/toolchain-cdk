@@ -1,0 +1,13 @@
+services:
+  ttyd-frontend:
+    build:
+      context: https://github.com/tsl0922/ttyd.git#1.7.7:html
+    ports:
+      - "9000"
+
+  ttyd:
+    build: ttyd
+    ports:
+      - 8888:80
+    volumes:
+      - ./ttyd/nginx.conf:/etc/nginx/nginx.conf
