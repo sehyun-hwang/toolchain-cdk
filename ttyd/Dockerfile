@@ -1,6 +1,6 @@
 FROM tsl0922/ttyd:alpine AS ttyd
 
-FROM nginx:alpine
+FROM openresty/openresty:alpine
 
 COPY --from=ttyd /usr/bin/ttyd /usr/bin/ttyd
 
