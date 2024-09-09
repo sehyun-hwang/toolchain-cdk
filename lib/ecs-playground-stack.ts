@@ -3,7 +3,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import { ApplicationProtocol, type ApplicationListener } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { type ApplicationListener, ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { AutoScalingGroup, GroupMetrics } from 'aws-cdk-lib/aws-autoscaling';
 import {
   InstanceArchitecture,
@@ -24,12 +24,15 @@ import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
 export default class HelloEcsStack extends cdk.Stack {
   listener: ApplicationListener;
 
+  vpc: ec2.IVpc;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const vpc = ec2.Vpc.fromLookup(this, 'Vpc', {
       isDefault: true,
     });
+    this.vpc = vpc;
 
     const autoScalingGroup = new AutoScalingGroup(this, 'AutoScalingGroup', {
       vpc,

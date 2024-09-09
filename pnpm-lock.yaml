@@ -17,6 +17,9 @@ importers:
       aws-cdk-lib:
         specifier: 2.150.0
         version: 2.150.0(constructs@10.3.0)
+      aws-lambda-reverse-proxy.git:
+        specifier: github:Ircama/aws-lambda-reverse-proxy
+        version: aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/9cb601e941d6df2d256ecbf540c48518c6b4de4a
       constructs:
         specifier: ^10.0.0
         version: 10.3.0
@@ -1136,6 +1139,10 @@ packages:
   aws-jwt-verify@4.0.1:
     resolution: {integrity: sha512-kzvi71eD3w/mCpYRUY7cz6DX4bfYihGdI2yV3FYQ2JuZZenqAqDPz0gWj0ew6vlAtdEVBNb7p+Dm2TAIxpVYMA==}
     engines: {node: '>=14.0.0'}
+
+  aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/9cb601e941d6df2d256ecbf540c48518c6b4de4a:
+    resolution: {tarball: https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/9cb601e941d6df2d256ecbf540c48518c6b4de4a}
+    version: 0.0.0
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -3826,6 +3833,8 @@ snapshots:
       fsevents: 2.3.2
 
   aws-jwt-verify@4.0.1: {}
+
+  aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/9cb601e941d6df2d256ecbf540c48518c6b4de4a: {}
 
   babel-jest@29.7.0(@babel/core@7.24.9):
     dependencies:
