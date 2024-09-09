@@ -19,11 +19,11 @@ const createSendEmailCommand = (toAddress, fromAddress) => new SendEmailCommand(
       /* required */
       Html: {
         Charset: 'UTF-8',
-        Data: 'HTML_FORMAT_BODY',
+        Data: 'HTML_FORMAT_BODY https://google.com',
       },
       Text: {
         Charset: 'UTF-8',
-        Data: 'TEXT_FORMAT_BODY',
+        Data: 'TEXT_FORMAT_BODY https://google.com',
       },
     },
     Subject: {
@@ -32,15 +32,18 @@ const createSendEmailCommand = (toAddress, fromAddress) => new SendEmailCommand(
     },
   },
   Source: fromAddress,
-  ReplyToAddresses: [
-    /* more items */
-  ],
+  ReplyToAddresses: [],
 });
 
 test('Test sending email to https://httpbin.org', async () => {
-  process.env.AWS_ENDPOINT_URL_SES = 'https://eo20dnx5kq1d0eb.m.pipedream.net';
+  process.env.AWS_ENDPOINT_URL_SES = 'https://eo20dnx5kq1d0eb.m.pipedream.net'; // hwanghyun3@gmail.com
+  // process.env.AWS_ENDPOINT_URL_SES = 'https://eo6ngl1wxblatys.m.pipedream.net';
   const client = new SESClient({
     logger: console,
+    credentials: {
+      accessKeyId: '',
+      secretAccessKey: '',
+    },
   });
   const sendEmailCommand = createSendEmailCommand(
     'D07HDTC5UQL',
