@@ -1,13 +1,20 @@
 import * as cdk from 'aws-cdk-lib';
-import { type ApplicationListener, ListenerAction, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import {
+  type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
+} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
+import {
+  type Authorizer, CognitoUserPoolsAuthorizer, LambdaIntegration, RequestValidator, type RestApi,
+} from 'aws-cdk-lib/aws-apigateway';
+import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;
   botUrl: string;
+  proxyFunction: LambdaFunction;
 }
 
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
@@ -63,6 +70,8 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       this.passwordless.createAuthChallengeFn,
       this.passwordless.fido2NotificationFn,
     ] as NodejsFunction[]).forEach(fn => fn.addEnvironment('AWS_ENDPOINT_URL_SES', props.botUrl));
+    if (!this.passwordless.fido2Api)
+      throw new Error('passwordless.fido2Api is undefined');
 
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.passwordless.userPool.userPoolId,
@@ -75,7 +84,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       }).value,
       fido2: {
         baseUrl: new cdk.CfnOutput(this, 'Fido2Url', {
-          value: this.passwordless.fido2Api!.url,
+          value: this.passwordless.fido2Api.url,
         }).value,
         authenticatorSelection: {
           userVerification: 'required',
@@ -90,13 +99,33 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     //   value: spa.bucket.bucketName,
     // });
 
-    props.listener.addAction('PasswordlessParamsResponse', {
+    const { listener } = props;
+    new ApplicationListenerRule(this, 'PasswordlessParamsResponse', {
+      listener,
       action: ListenerAction.fixedResponse(200, {
         contentType: 'application/json',
         messageBody: JSON.stringify(outputs),
       }),
       conditions: [ListenerCondition.pathPatterns(['/passwordless/params'])],
       priority: 10,
+    });
+
+    const restApi = this.passwordless.fido2Api;
+    const integration = new LambdaIntegration(props.proxyFunction);
+    const resource = restApi.root.addResource('spawn');
+    const requestValidator = restApi.addRequestValidator('header-validator', {
+      validateRequestParameters: true,
+    });
+
+    const authorizer = new CognitoUserPoolsAuthorizer(this, 'UserPoolAuthorizer', {
+      cognitoUserPools: [this.passwordless.userPool],
+    });
+    resource.addMethod('GET', integration, {
+      authorizer,
+      requestValidator,
+      requestParameters: {
+        'method.request.header.X-User-Id': true,
+      },
     });
   }
 }
