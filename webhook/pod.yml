@@ -1,13 +1,15 @@
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.18.1-standalone-strict/pod.json
+
 apiVersion: v1
 kind: Pod
 metadata:
   name: webhook
 spec:
   containers:
-  - name: stress-webhook
-    image: stress-webhook
-    ports:
-    - containerPort: 9000
-    - hostPort: 9000 
-  - name: whoami
-    image: traefik/whoami
+    - name: stress-webhook
+      image: stress-webhook
+      ports:
+        - containerPort: 9000
+          hostPort: 9000
+    - name: whoami
+      image: traefik/whoami
