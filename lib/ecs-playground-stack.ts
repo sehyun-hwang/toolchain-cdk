@@ -2,7 +2,6 @@
 
 import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { AutoScalingGroup, GroupMetrics } from 'aws-cdk-lib/aws-autoscaling';
 import {
   type IVpc,
@@ -11,9 +10,11 @@ import {
   InstanceSize,
   InstanceType,
   Port,
+  SecurityGroup,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
+import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';

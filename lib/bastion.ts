@@ -1,17 +1,23 @@
 import * as cdk from 'aws-cdk-lib';
 import {
+  ApplicationListener, ApplicationProtocol, ApplicationTargetGroup, ListenerCondition,
+} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import {
+  Architecture, Code, Function as LambdaFunction, Runtime,
+} from 'aws-cdk-lib/aws-lambda';
+import {
   ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition,
 } from 'aws-cdk-lib/aws-ecs';
 import { DnsRecordType, IService } from 'aws-cdk-lib/aws-servicediscovery';
+import { type IRole, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import {
+  Port,
+  SecurityGroup,
+} from 'aws-cdk-lib/aws-ec2';
 import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import type { IVpc } from 'aws-cdk-lib/aws-ec2';
-import { ApplicationListenerRule, ApplicationProtocol, ListenerCondition } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import {
-  Architecture, Code, Function as LambdaFunction, Runtime,
-} from 'aws-cdk-lib/aws-lambda';
-import { type IRole, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 
 interface BastionStackProps extends cdk.StackProps {
   vpc: IVpc,
@@ -69,17 +75,26 @@ export default class BastionStack extends cdk.Stack {
         dnsRecordType: DnsRecordType.A,
       },
     });
-    const targetGroup = loadBalancerServiceBase.listener.addTargets('Bastion', {
-      protocol: ApplicationProtocol.HTTP,
-    });
-    // targetGroup.addTarget(fargateService);
-    const applicationListenerRule = new ApplicationListenerRule(this, 'ApplicationListenerRule', {
-      listener: loadBalancerServiceBase.listener,
-      priority: 123,
 
+    const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {
+      listenerArn: loadBalancerServiceBase.listener.listenerArn,
+      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', loadBalancerServiceBase.loadBalancer.connections.securityGroups[0].securityGroupId),
+    });
+
+    // const { listener } = loadBalancerServiceBase;
+    const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {
+      targets: [fargateService],
+      vpc: cluster.vpc,
+      protocol: ApplicationProtocol.HTTP,
+      // port: 80,
+    });
+    fargateService.connections.allowFrom(loadBalancerServiceBase.loadBalancer, Port.tcp(80));
+
+    listener.addTargetGroups('ListnerRule', {
+      targetGroups: [targetGroup],
       // the properties below are optional
       conditions: [ListenerCondition.pathPatterns(['/'])],
-      targetGroups: [targetGroup],
+      priority: 124,
     });
 
     const { namespace: { namespaceName }, serviceName } = fargateService

@@ -2,14 +2,12 @@ import * as cdk from 'aws-cdk-lib';
 import {
   type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { CognitoUserPoolsAuthorizer, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import { Construct } from 'constructs';
+import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
-import {
-  type Authorizer, CognitoUserPoolsAuthorizer, LambdaIntegration, RequestValidator, type RestApi,
-} from 'aws-cdk-lib/aws-apigateway';
-import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;
