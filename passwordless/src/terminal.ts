@@ -1,6 +1,5 @@
+import '@xterm/xterm/css/xterm.css';
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
-
-const wsUrl = 'ws://localhost:7681/ws';
 
 const clientOptions = {
   rendererType: 'webgl',
@@ -46,10 +45,9 @@ const flowControl = {
 };
 
 export default {
-  id: "terminal-container",
-  wsUrl,
+  id: 'terminal-container',
   tokenUrl: '',
   clientOptions,
   termOptions,
   flowControl,
-}
+};

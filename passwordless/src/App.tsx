@@ -13,7 +13,6 @@
  * language governing permissions and limitations under the License.
  */
 import "./App.css";
-import "xterm/css/xterm.css";
 
 import { usePasswordless } from "amazon-cognito-passwordless-auth/react";
 import StepUpAuth from "./StepUpAuth";
@@ -26,22 +25,29 @@ const { Terminal } = window.ttyd_terminal;
 
 function App() {
   const {
-    signOut,
-    signInStatus,
+    signOut, 
+    signInStatus, 
     showAuthenticatorManager,
     toggleShowAuthenticatorManager,
+    tokens, // tokens: {idToken: ''}
     tokensParsed,
   } = usePasswordless();
 
   const [showStepUpAuth, setShowStepUpAuth] = useState(false);
-  if (showStepUpAuth && signInStatus !== "SIGNED_IN") setShowStepUpAuth(false);
+  if (showStepUpAuth && signInStatus !== "SIGNED_IN") 
+    setShowStepUpAuth(false);
 
   return (
     <div className="app">
       <div>This YOUR app</div>
       <div>Hi there {tokensParsed?.idToken.email}</div>
+      <div style={{
+        wordBreak: 'break-all',
+      }}>{tokens?.idToken}</div>
 
-      <Terminal {...terminalProps} />
+      <Terminal wsUrl={'http://localhost:8889/ttyd/ws?' + new URLSearchParams({
+
+      })} {...terminalProps} />
 
       <button
         onClick={() => {

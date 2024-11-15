@@ -1,47 +1,29 @@
-/**
- * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"). You
- * may not use this file except in compliance with the License. A copy of
- * the License is located at
- *
- *     http://aws.amazon.com/apache2.0/
- *
- * or in the "license" file accompanying this file. This file is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- */
-// import React from "react";
-// import ReactDOM from "react-dom/client";
-import App from "./App";
+import "amazon-cognito-passwordless-auth/passwordless.css";
+import "@cloudscape-design/global-styles/index.css";
 import "./index.css";
+
+import { render } from 'preact';
 import { Passwordless } from "amazon-cognito-passwordless-auth";
 import {
   PasswordlessContextProvider,
   Passwordless as PasswordlessComponent,
   Fido2Toast,
 } from "amazon-cognito-passwordless-auth/react";
-import "amazon-cognito-passwordless-auth/passwordless.css";
-import "@cloudscape-design/global-styles/index.css";
-import { render } from 'preact';
 
-console.debug("App built at:", import.meta.env.VITE_APP_BUILD_DATE);
-
+import App from "./App";
+import { MockPasswordless } from "./local-cognito";
 Passwordless.configure({
-  cognitoIdpEndpoint: 'ap-northeast-1',
-  clientId: '69v2rfdafphstpehrkrobmrkn2',
-  fido2: {
-    baseUrl: 'https://ygaiuupzt3.execute-api.ap-northeast-1.amazonaws.com/v1/',
-    authenticatorSelection: {
-      userVerification: "required",
-    },
-  },
-  debug: console.debug,
+  cognitoIdpEndpoint: "http://localhost:9229",
+  userPoolId: "local_7JZeutY1",
+  clientId: "2qzt0ne81iqozgznsgx31e85i",
 });
+
+Passwordless.configure(import.meta.env.PASSWORDLESS_CONFIG_JSON);
 
 render(
   <PasswordlessContextProvider enableLocalUserCache={true}>
+    {import.meta.env.DEV && <MockPasswordless />}  
+
     <PasswordlessComponent
       brand={{
         backgroundImageUrl:
@@ -56,5 +38,5 @@ render(
       {/*</React.StrictMode>*/}
     </PasswordlessComponent>
     <Fido2Toast /> {/* Add Fido2Toast below App so it is rendered on top */}
-  </PasswordlessContextProvider>
+  </PasswordlessContextProvider >
   , document.getElementById("root") as HTMLElement);
