@@ -1,0 +1,16 @@
+{
+  "Clients": {
+    "2qzt0ne81iqozgznsgx31e85i": {
+      "ClientId": "2qzt0ne81iqozgznsgx31e85i",
+      "ClientName": "default",
+      "CreationDate": "2024-11-15T10:08:04.073Z",
+      "LastModifiedDate": "2024-11-15T10:08:04.073Z",
+      "TokenValidityUnits": {
+        "AccessToken": "hours",
+        "IdToken": "minutes",
+        "RefreshToken": "days"
+      },
+      "UserPoolId": "local_7JZeutY1"
+    }
+  }
+}
