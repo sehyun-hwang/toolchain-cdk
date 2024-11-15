@@ -20,10 +20,11 @@ import StepUpAuth from "./StepUpAuth";
 import { useState, useRef, useEffect } from 'preact/hooks';
 
 import terminalProps from './terminal';
+import useTtydWsUrl from './nginx';
 
 const { Terminal } = window.ttyd_terminal;
 
-function App() {
+export default function App() {
   const {
     signOut, 
     signInStatus, 
@@ -32,6 +33,7 @@ function App() {
     tokens, // tokens: {idToken: ''}
     tokensParsed,
   } = usePasswordless();
+  const ttydWsUrl = useTtydWsUrl();
 
   const [showStepUpAuth, setShowStepUpAuth] = useState(false);
   if (showStepUpAuth && signInStatus !== "SIGNED_IN") 
@@ -45,9 +47,7 @@ function App() {
         wordBreak: 'break-all',
       }}>{tokens?.idToken}</div>
 
-      <Terminal wsUrl={'http://localhost:8889/ttyd/ws?' + new URLSearchParams({
-
-      })} {...terminalProps} />
+      {ttydWsUrl && <Terminal wsUrl={ttydWsUrl} {...terminalProps} />}
 
       <button
         onClick={() => {
@@ -72,5 +72,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

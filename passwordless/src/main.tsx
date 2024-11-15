@@ -12,11 +12,6 @@ import {
 
 import App from "./App";
 import { MockPasswordless } from "./local-cognito";
-Passwordless.configure({
-  cognitoIdpEndpoint: "http://localhost:9229",
-  userPoolId: "local_7JZeutY1",
-  clientId: "2qzt0ne81iqozgznsgx31e85i",
-});
 
 Passwordless.configure(import.meta.env.PASSWORDLESS_CONFIG_JSON);
 
