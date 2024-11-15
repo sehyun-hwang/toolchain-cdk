@@ -1,18 +1,21 @@
+/* eslint-disable no-new, max-classes-per-file */
+
 import * as cdk from 'aws-cdk-lib';
 import {
   type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { CognitoUserPoolsAuthorizer, LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
+import {
+  CognitoUserPoolsAuthorizer, MockIntegration, PassthroughBehavior, RequestValidator,
+} from 'aws-cdk-lib/aws-apigateway';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import { Construct } from 'constructs';
-import { Function as LambdaFunction } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;
   botUrl: string;
-  proxyFunction: LambdaFunction;
+  // proxyFunction: LambdaFunction;
 }
 
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
@@ -59,6 +62,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
         // Cognito will tell you that––and you don't wait for a magic link
         // that will never arrive in your inbox:
         preventUserExistenceErrors: false,
+        generateSecret: true,
       },
       // while testing/experimenting it's heplful to see e.g. full request details in logs:
       logLevel: 'DEBUG',
@@ -75,10 +79,11 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       value: this.passwordless.userPool.userPoolId,
     });
 
+    const [userPoolClient] = this.passwordless.userPoolClients || [];
     const outputs: Config = {
       cognitoIdpEndpoint: this.region,
       clientId: new cdk.CfnOutput(this, 'UserPoolClientId', {
-        value: this.passwordless.userPoolClients!.at(0)!.userPoolClientId,
+        value: userPoolClient.userPoolClientId,
       }).value,
       fido2: {
         baseUrl: new cdk.CfnOutput(this, 'Fido2Url', {
@@ -88,6 +93,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
           userVerification: 'required',
         },
       },
+      clientSecret: userPoolClient.userPoolClientSecret.unsafeUnwrap(),
     };
 
     // new cdk.CfnOutput(this, "SpaUrl", {
@@ -108,22 +114,61 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       priority: 10,
     });
 
-    const restApi = this.passwordless.fido2Api;
-    const integration = new LambdaIntegration(props.proxyFunction);
-    const resource = restApi.root.addResource('spawn');
-    const requestValidator = restApi.addRequestValidator('header-validator', {
-      validateRequestParameters: true,
-    });
+    // const userPoolDomain = this.passwordless.userPool.addDomain('CognitoDomain', {
+    //   cognitoDomain: {
+    //     domainPrefix: 'my-awesome-app',
+    //   },
+    // });
 
-    const authorizer = new CognitoUserPoolsAuthorizer(this, 'UserPoolAuthorizer', {
-      cognitoUserPools: [this.passwordless.userPool],
+    // const action = new AuthenticateCognitoAction({
+    //   userPool: this.passwordless.userPool,
+    //   userPoolClient: this.passwordless.userPoolClients[0],
+    //   userPoolDomain,
+    //   next: ListenerAction.fixedResponse(200, {
+    //     contentType: 'text/plain',
+    //     messageBody: 'Authenticated',
+    //   }),
+    //   onUnauthenticatedRequest: UnauthenticatedAction.DENY,
+    // });
+
+    // new ApplicationListenerRule(this, 'AuthenticateCognitoRule', {
+    //   listener,
+    //   action,
+    //   conditions: [ListenerCondition.pathPatterns(['/test'])],
+    //   priority: 20,
+    // });
+
+    const restApi = this.passwordless.fido2Api;
+    const congitoIdentityHeaderKey = 'method.response.header.X-Cognito-Identity-Id';
+    const integration = new MockIntegration({
+      integrationResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            [congitoIdentityHeaderKey]: 'context.authorizer.claims.sub',
+          },
+        },
+      ],
+      passthroughBehavior: PassthroughBehavior.NEVER,
+      requestTemplates: {
+        'application/json': '{"statusCode":200}',
+      },
     });
-    resource.addMethod('GET', integration, {
+    const authorizer = this.node.findChild('CognitoAuthorizer' + this.passwordless.node.id) as CognitoUserPoolsAuthorizer;
+    const requestValidator = this.node.findChild('ReqValidator') as RequestValidator;
+
+    restApi.root.addResource('verify').addMethod('GET', integration, {
       authorizer,
       requestValidator,
       requestParameters: {
-        'method.request.header.X-User-Id': true,
+        // 'method.request.header.X-User-Id': true,
       },
+      methodResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          [congitoIdentityHeaderKey]: true,
+        },
+      }],
     });
   }
 }

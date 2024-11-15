@@ -36,9 +36,6 @@ export default class BastionStack extends cdk.Stack {
     const { loadBalancerServiceBase, vpc } = props;
     this.vpc = props.vpc;
 
-    const nginxAsset = new DockerImageAsset(this, 'NginxImageAsset', {
-      directory: 'bastion',
-    });
     const taskDefinition = new FargateTaskDefinition(this, 'FargateTaskDefinition', {
       runtimePlatform: {
         cpuArchitecture: CpuArchitecture.ARM64,
@@ -46,6 +43,10 @@ export default class BastionStack extends cdk.Stack {
     });
     // @ts-expect-error protected
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
+
+    const nginxAsset = new DockerImageAsset(this, 'NginxImageAsset', {
+      directory: 'bastion',
+    });
     taskDefinition.addContainer('nginx', {
       memoryLimitMiB: 256,
       logging: logDriver,
@@ -53,6 +54,9 @@ export default class BastionStack extends cdk.Stack {
       portMappings: [{
         containerPort: 80,
       }],
+      environment: {
+        API_GATEWAY_AUTH_URL: '',
+      },
     });
 
     const ttydAsset = new DockerImageAsset(this, 'ttydImageAsset', {
@@ -74,6 +78,7 @@ export default class BastionStack extends cdk.Stack {
         // Create A records - useful for AWSVPC network mode.
         dnsRecordType: DnsRecordType.A,
       },
+      desiredCount: 0,
     });
 
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {

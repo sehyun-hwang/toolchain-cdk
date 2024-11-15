@@ -10,7 +10,6 @@ import {
   InstanceSize,
   InstanceType,
   Port,
-  SecurityGroup,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
