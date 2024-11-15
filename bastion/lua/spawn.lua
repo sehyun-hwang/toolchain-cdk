@@ -1,4 +1,4 @@
-local user_id = ngx.var.http_x_user_id
+local user_id = ngx.var.auth_congnito_identity_id:gsub("-", "_")
 
 local sock = ngx.socket.tcp()
 local ok, err = sock:connect("127.0.0.1", 8080)

@@ -1,12 +1,7 @@
 import test from 'node:test';
 
 test('Test bastion nginx', async () => {
-  const user_id = 'user';
-  const text = await fetch('http://localhost:8888/spawn', {
-    headers: {
-      'X-User-Id': user_id,
-    },
-  }).then(res => {
+  const text = await fetch('http://localhost:8889/spawn').then(res => {
     console.log(res.headers);
     return res.text();
   });
@@ -14,8 +9,8 @@ test('Test bastion nginx', async () => {
   const token = text.substring(text.lastIndexOf('\n', text.lastIndexOf('\n') - 1)).trim();
   console.log(token);
 
-  const spawn = () => fetch('http://localhost:8888/ttyd/?' + new URLSearchParams({
-    user_id,
+  const spawn = () => fetch('http://localhost:8889/ttyd/?' + new URLSearchParams({
+    user_id: 'mock-cognito-identity-id',
     token,
   }))
     .then(res => res.text())

@@ -1,0 +1,34 @@
+services:
+  # ttyd-frontend:
+
+  pypm:
+    container_name: pypm
+    build: bastion/ttyd
+    ports:
+      - 8889:80
+    volumes:
+      - run-ttyd:/run/ttyd
+
+  nginx:
+    image: openresty/openresty:alpine
+    depends_on:
+      - pypm
+    network_mode: container:pypm
+    environment:
+      API_GATEWAY_AUTH_URL: https://postman-echo.com/response-headers?X-Cognito-Identity-Id=mock-cognito-identity-id
+    command:
+      - sh
+      - -c
+      - >
+        addgroup -g 101 -S nginx;
+        adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx;
+        chown nginx /run/ttyd &&
+        echo "proxy_pass $${API_GATEWAY_AUTH_URL};" > /usr/local/openresty/nginx/conf/auth-proxy-pass.conf &&
+        HMAC_KEY=$$(xxd -pl 16 /dev/urandom) exec /usr/local/openresty/bin/openresty
+    volumes:
+      - ./bastion/conf:/etc/nginx/conf.d
+      - ./bastion/lua:/lua
+      - run-ttyd:/run/ttyd
+
+volumes:
+  run-ttyd:

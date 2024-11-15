@@ -12,7 +12,8 @@ RUN apk add --no-cache \
 RUN pip install --user --break-system-packages --no-cache-dir --no-deps python-pm \
 	&& pip install --user --break-system-packages --no-cache-dir termtables>=0.2.2 colorama>=0.4.3
 
-RUN addgroup -g 101 -S nginx \
+RUN sed -i 's/if len(name) > 16:/if False:/' /root/.local/lib/python3.12/site-packages/pypm/manager.py \
+	&& addgroup -g 101 -S nginx \
 	&& adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
 
 # @TODO

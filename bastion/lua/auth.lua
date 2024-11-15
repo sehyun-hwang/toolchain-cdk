@@ -1,5 +1,5 @@
 local key = "thisisverysecretstuff"
-local user_id = ngx.var.arg_user_id
+local user_id = ngx.var.arg_user_id:gsub("-", "_")
 local token = ngx.var.arg_token
 
 for i = 0, 1, 1
