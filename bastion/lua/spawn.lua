@@ -1,4 +1,5 @@
 local user_id = ngx.var.auth_congnito_identity_id:gsub("-", "_")
+local hmac_key = os.getenv("HMAC_KEY")
 
 local sock = ngx.socket.tcp()
 local ok, err = sock:connect("127.0.0.1", 8080)
@@ -8,7 +9,8 @@ if not ok then
 end
 
 sock:settimeout(1000) -- one second timeout
-local bytes, err = sock:send(string.format('addproc %s "ttyd -i /run/ttyd/%s.sock -U nginx:nginx fish" False False .\n',
+local bytes, err = sock:send(string.format(
+    'addproc %s "ttyd -i /run/ttyd/%s.sock -U nginx:nginx -W fish" False False .\n',
     user_id, user_id))
 
 if err then
@@ -48,9 +50,8 @@ end
 ngx.say("successfully read a line: ", line)
 sock:close()
 
-local key = "thisisverysecretstuff"
 local src = string.format("%s:%d", user_id, ngx.time() / 10)
-local digest = ngx.hmac_sha1(key, src)
+local digest = ngx.hmac_sha1(hmac_key, src)
 ngx.say(ngx.md5(digest))
 
 -- Successfully added process
