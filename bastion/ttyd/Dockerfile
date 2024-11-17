@@ -7,7 +7,7 @@ COPY --from=ttyd /usr/bin/ttyd /usr/bin/ttyd
 RUN apk add --no-cache \
 	py3-pip py3-psutil \
 	aws-cli \
-	fish
+	tmux fish
 
 RUN pip install --user --break-system-packages --no-cache-dir --no-deps python-pm \
 	&& pip install --user --break-system-packages --no-cache-dir termtables>=0.2.2 colorama>=0.4.3

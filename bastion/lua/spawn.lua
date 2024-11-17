@@ -10,7 +10,7 @@ end
 
 sock:settimeout(1000) -- one second timeout
 local bytes, err = sock:send(string.format(
-    'addproc %s "ttyd -i /run/ttyd/%s.sock -U nginx:nginx -W fish" False False .\n',
+    'addproc %s "ttyd -i /run/ttyd/%s.sock -U nginx:nginx -W tmux new -As default" False False .\n',
     user_id, user_id))
 
 if err then
