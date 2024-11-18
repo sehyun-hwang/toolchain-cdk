@@ -13,7 +13,7 @@ COPY . ./
 
 RUN sed -i \
 	-e "s=entry: {=entry: {terminal:'./components/terminal/index.tsx',=" \
-	-e "s=output: {=output: {library:{name:'ttyd_[name]',type:'var'},=" \
+	-e "s=output: {=output: {library:{name:'ttyd_[name]',type:'window'},=" \
 	webpack.config.js
 
 RUN NODE_ENV=production yarn webpack
