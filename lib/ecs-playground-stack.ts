@@ -2,7 +2,7 @@
 
 import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import { AutoScalingGroup, GroupMetrics } from 'aws-cdk-lib/aws-autoscaling';
+import { AutoScalingGroup, GroupMetrics, Monitoring } from 'aws-cdk-lib/aws-autoscaling';
 import {
   type IVpc,
   InstanceArchitecture,
@@ -26,8 +26,6 @@ class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase 
  */
 export default class HelloEcsStack extends cdk.Stack {
   vpc: IVpc;
-
-  cluster: ecs.Cluster;
 
   loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
 
@@ -54,6 +52,7 @@ export default class HelloEcsStack extends cdk.Stack {
       minCapacity: 1,
       spotPrice: '0.007', // $0.0032 per Hour when writing, $0.0084 per Hour on-demand
       groupMetrics: [GroupMetrics.all()],
+      instanceMonitoring: Monitoring.BASIC,
     });
 
     const capacityProviderName = 'prefix-' + cdk.Names.nodeUniqueId(new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
@@ -67,7 +66,7 @@ export default class HelloEcsStack extends cdk.Stack {
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
-      containerInsights: true,
+      // containerInsights: true,
       enableFargateCapacityProviders: true,
       defaultCloudMapNamespace: {
         name: 'foo',
