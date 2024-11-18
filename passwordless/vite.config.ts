@@ -1,15 +1,15 @@
-import { glob } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 
-import cognitoLocal from "cognito-local";
-import { defineConfig } from "vite";
-import preact from "@preact/preset-vite";
-import Pino from "pino";
-import { Config } from 'amazon-cognito-passwordless-auth/config';
-import { AppClient } from 'cognito-local/lib/services/appClient';
+import { defineConfig, loadEnv } from 'vite';
+import type { AppClient } from 'cognito-local/lib/services/appClient';
+import type { Config } from 'amazon-cognito-passwordless-auth/config';
+import Pino from 'pino';
+import cognitoLocal from 'cognito-local';
+import generateFile from 'vite-plugin-generate-file';
+import preact from '@preact/preset-vite';
 
-let server: Server;
+let server: Server | undefined;
 
 export default defineConfig(async ({ mode }) => {
   console.log(mode);
@@ -19,11 +19,11 @@ export default defineConfig(async ({ mode }) => {
   if (mode === 'development') {
     // Local Cognitio server
     server && await new Promise<void>((resolve, reject) => server
-      .close(error => error ? reject(error) : resolve()));
+      .close((error?: Error | undefined) => { error ? reject(error) : resolve(); }));
     server = await cognitoLocal.createDefaultServer(Pino())
       .then(cognitoServer => cognitoServer.start());
     const cognitoAddress = server.address();
-    if (typeof cognitoAddress === 'string')
+    if (typeof cognitoAddress === 'string' || cognitoAddress === null)
       throw new Error();
 
     // Local Cognito DB
@@ -48,13 +48,21 @@ export default defineConfig(async ({ mode }) => {
   }
 
   const define = {
-      'import.meta.env.PASSWORDLESS_CONFIG_JSON': PASSWORDLESS_CONFIG_JSON,
-      'import.meta.env.COGNITO_LOCAL_DB_JSON': COGNITO_LOCAL_DB_JSON,
-    };
+    'import.meta.env.PASSWORDLESS_CONFIG_JSON': PASSWORDLESS_CONFIG_JSON,
+    'import.meta.env.COGNITO_LOCAL_DB_JSON': COGNITO_LOCAL_DB_JSON,
+  };
   console.log(define);
+  const { VITE_API_BASE } = loadEnv(mode, process.cwd()); 
   return {
     plugins: [
       preact(),
+      generateFile([{
+        type: 'json',
+        output: 'env.json',
+        data: {
+          VITE_API_BASE,
+        },
+      }]),
     ],
     define,
   };

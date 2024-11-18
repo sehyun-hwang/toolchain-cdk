@@ -1,28 +1,27 @@
-/**
- * Copyright Amazon.com, Inc. and its affiliates. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"). You
- * may not use this file except in compliance with the License. A copy of
- * the License is located at
- *
- *     http://aws.amazon.com/apache2.0/
- *
- * or in the "license" file accompanying this file. This file is
- * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
- * ANY KIND, either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- */
 import "./App.css";
 
 import { usePasswordless } from "amazon-cognito-passwordless-auth/react";
 import StepUpAuth from "./StepUpAuth";
-// import { useState, useRef, useEffect } from "react";
 import { useState, useRef, useEffect } from 'preact/hooks';
+import type { Component } from "preact";
 
+import 'http://localhost:9000/terminal.754c44763d540d534ad4.js';
 import terminalProps from './terminal';
 import useTtydWsUrl from './nginx';
 
-const { Terminal } = window.ttyd_terminal;
+interface ttyd_terminal {
+  Terminal(prop: {
+    wsUrl: string;
+  }): JSX.Element;
+}
+
+interface MyWindow extends Window {
+  ttyd_terminal: ttyd_terminal;
+}
+
+declare var window: MyWindow;
+
+const { Terminal } = window['ttyd_terminal'];
 
 export default function App() {
   const {
@@ -30,7 +29,7 @@ export default function App() {
     signInStatus, 
     showAuthenticatorManager,
     toggleShowAuthenticatorManager,
-    tokens, // tokens: {idToken: ''}
+    tokens,
     tokensParsed,
   } = usePasswordless();
   const ttydWsUrl = useTtydWsUrl();

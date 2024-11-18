@@ -12,25 +12,27 @@ export default function useTtydWsUrl() {
   const { tokens, tokensParsed } = usePasswordless();
   const [ttydWsUrl, setTtydWsUrl] = useState('');
 
-  useEffect(async () => {
-    const { sub } = tokensParsed.idToken;
+  useEffect(() => {
     if (!(tokens && tokensParsed)) {
       setTtydWsUrl('');
       return;
     }
+    const { sub } = tokensParsed.idToken;
 
-    const text = await fetch(VITE_API_BASE + '/spawn', {
+    fetch(VITE_API_BASE + '/spawn', {
       headers: {
         Authorization: `Bearer ${tokens.idToken}`,
       },
     })
-      .then(res => (res.ok ? res.text() : Promise.reject(new Error(res))));
-    const token = text.substring(text.lastIndexOf('\n', text.lastIndexOf('\n') - 1)).trim();
-
-    setTtydWsUrl(wsApiBase + '/ttyd/ws?' + new URLSearchParams({
-      user_id: DEV ? VITE_INJECTED_USER_ID || sub : sub,
-      token,
-    }).toString());
+      .then(res => (res.ok ? res.text() : Promise.reject(new Error(res as unknown as string))))
+      .then(text => {
+        const token = text.substring(text.lastIndexOf('\n', text.lastIndexOf('\n') - 1)).trim();
+        setTtydWsUrl(wsApiBase + '/ttyd/ws?' + new URLSearchParams({
+          user_id: DEV ? VITE_INJECTED_USER_ID || sub : sub,
+          token,
+        }).toString());
+      })
+      .catch(console.error);
   }, [tokens?.idToken, tokensParsed?.idToken.sub]);
 
   return ttydWsUrl;
