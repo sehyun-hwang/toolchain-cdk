@@ -1,4 +1,4 @@
-/* eslint-disable no-new, max-classes-per-file */
+/* eslint-disable max-classes-per-file */
 
 import * as cdk from 'aws-cdk-lib';
 import {
@@ -15,7 +15,7 @@ import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;
   botUrl: string;
-  // proxyFunction: LambdaFunction;
+  distributionDomainName: string;
 }
 
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
@@ -24,11 +24,11 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: End2EndPasswordlessExampleStackProps) {
     super(scope, id, props);
 
-    // const spa = cloudfrontServedEmptySpaBucket(this, "ExampleSpa");
+    const { distributionDomainName } = props;
     this.passwordless = new Passwordless(this, 'Passwordless', {
       allowedOrigins: [
         'http://localhost:5173',
-        // `https://${spa.distribution.distributionDomainName}`,
+        'https://' + distributionDomainName,
       ],
       clientMetadataTokenKeys: ['consent_id'],
       userPoolProps: {
@@ -42,12 +42,15 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
         relyingPartyName: 'Passwordless Fido2 Example',
         allowedRelyingPartyIds: [
           'localhost',
-          // spa.distribution.distributionDomainName,
+          distributionDomainName,
         ],
         attestation: 'none',
         userVerification: 'required',
         updatedCredentialsNotification: {
           sesFromAddress: '',
+        },
+        api: {
+          addWaf: false,
         },
       },
       magicLink: { sesFromAddress: '' },
@@ -56,7 +59,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
         // perrty short so you see token refreshes in action often:
         idTokenValidity: cdk.Duration.minutes(5),
         accessTokenValidity: cdk.Duration.minutes(5),
-        refreshTokenValidity: cdk.Duration.hours(1),
+        refreshTokenValidity: cdk.Duration.days(1),
         // while testing/experimenting it's best to set this to false,
         // so that when you try to sign in with a user that doesn't exist,
         // Cognito will tell you that––and you don't wait for a magic link
@@ -80,6 +83,8 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     });
 
     const [userPoolClient] = this.passwordless.userPoolClients || [];
+    if (!userPoolClient)
+      throw new Error('this.passwordless.userPoolClients is undefined');
     const outputs: Config = {
       cognitoIdpEndpoint: this.region,
       clientId: new cdk.CfnOutput(this, 'UserPoolClientId', {
@@ -96,13 +101,6 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       clientSecret: userPoolClient.userPoolClientSecret.unsafeUnwrap(),
     };
 
-    // new cdk.CfnOutput(this, "SpaUrl", {
-    //   value: `https://${spa.distribution.distributionDomainName}`,
-    // });
-    // new cdk.CfnOutput(this, "SpaBucket", {
-    //   value: spa.bucket.bucketName,
-    // });
-
     const { listener } = props;
     new ApplicationListenerRule(this, 'PasswordlessParamsResponse', {
       listener,
@@ -113,30 +111,6 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       conditions: [ListenerCondition.pathPatterns(['/passwordless/params'])],
       priority: 10,
     });
-
-    // const userPoolDomain = this.passwordless.userPool.addDomain('CognitoDomain', {
-    //   cognitoDomain: {
-    //     domainPrefix: 'my-awesome-app',
-    //   },
-    // });
-
-    // const action = new AuthenticateCognitoAction({
-    //   userPool: this.passwordless.userPool,
-    //   userPoolClient: this.passwordless.userPoolClients[0],
-    //   userPoolDomain,
-    //   next: ListenerAction.fixedResponse(200, {
-    //     contentType: 'text/plain',
-    //     messageBody: 'Authenticated',
-    //   }),
-    //   onUnauthenticatedRequest: UnauthenticatedAction.DENY,
-    // });
-
-    // new ApplicationListenerRule(this, 'AuthenticateCognitoRule', {
-    //   listener,
-    //   action,
-    //   conditions: [ListenerCondition.pathPatterns(['/test'])],
-    //   priority: 20,
-    // });
 
     const restApi = this.passwordless.fido2Api;
     const congitoIdentityHeaderKey = 'method.response.header.X-Cognito-Identity-Id';
@@ -160,9 +134,6 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     restApi.root.addResource('verify').addMethod('GET', integration, {
       authorizer,
       requestValidator,
-      requestParameters: {
-        // 'method.request.header.X-User-Id': true,
-      },
       methodResponses: [{
         statusCode: '200',
         responseParameters: {
