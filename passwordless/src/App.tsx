@@ -5,9 +5,11 @@ import StepUpAuth from "./StepUpAuth";
 import { useState, useRef, useEffect } from 'preact/hooks';
 import type { Component } from "preact";
 
-import 'http://localhost:9000/terminal.754c44763d540d534ad4.js';
+import * as _terminal from '@ttyd-terminal';
 import terminalProps from './terminal';
 import useTtydWsUrl from './nginx';
+
+console.warn('noop', _terminal);
 
 interface ttyd_terminal {
   Terminal(prop: {

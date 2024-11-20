@@ -8,8 +8,9 @@ import Pino from 'pino';
 import cognitoLocal from 'cognito-local';
 import generateFile from 'vite-plugin-generate-file';
 import preact from '@preact/preset-vite';
+import urlResolve from 'rollup-plugin-url-resolve';
 
-let server: Server | undefined;
+let server: Server;
 
 export default defineConfig(async ({ mode }) => {
   console.log(mode);
@@ -18,8 +19,9 @@ export default defineConfig(async ({ mode }) => {
   let PASSWORDLESS_CONFIG_JSON: string;
   if (mode === 'development') {
     // Local Cognitio server
-    server && await new Promise<void>((resolve, reject) => server
-      .close((error?: Error | undefined) => { error ? reject(error) : resolve(); }));
+    if (server)
+      await new Promise<void>((resolve, reject) => server
+        .close((error?: Error | undefined) => { error ? reject(error) : resolve(); }));
     server = await cognitoLocal.createDefaultServer(Pino())
       .then(cognitoServer => cognitoServer.start());
     const cognitoAddress = server.address();
@@ -52,9 +54,19 @@ export default defineConfig(async ({ mode }) => {
     'import.meta.env.COGNITO_LOCAL_DB_JSON': COGNITO_LOCAL_DB_JSON,
   };
   console.log(define);
-  const { VITE_API_BASE } = loadEnv(mode, process.cwd()); 
+  const { VITE_API_BASE } = loadEnv(mode, process.cwd());
   return {
+    resolve: {
+      alias: [
+        { find: '@ttyd-terminal', replacement: 'http://localhost:9000/terminal.754c44763d540d534ad4.js' },
+      ],
+    },
     plugins: [
+      {
+        name: 'rollup-plugin-url-resolve',
+        enforce: 'pre',
+        ...urlResolve(),
+      },
       preact(),
       generateFile([{
         type: 'json',
