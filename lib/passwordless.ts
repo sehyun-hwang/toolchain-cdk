@@ -9,7 +9,6 @@ import {
 } from 'aws-cdk-lib/aws-apigateway';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import { Construct } from 'constructs';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
@@ -21,10 +20,13 @@ interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
   passwordless: Passwordless;
 
+  verifyApiUrl: string;
+
   constructor(scope: Construct, id: string, props: End2EndPasswordlessExampleStackProps) {
     super(scope, id, props);
 
     const { distributionDomainName } = props;
+    const sesEnvironment = { AWS_ENDPOINT_URL_SES: props.botUrl };
     this.passwordless = new Passwordless(this, 'Passwordless', {
       allowedOrigins: [
         'http://localhost:5173',
@@ -69,15 +71,11 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       },
       // while testing/experimenting it's heplful to see e.g. full request details in logs:
       logLevel: 'DEBUG',
+      functionProps: {
+        createAuthChallenge: { environment: sesEnvironment },
+        fido2notification: { environment: sesEnvironment },
+      },
     });
-
-    ([
-      this.passwordless.createAuthChallengeFn,
-      this.passwordless.fido2NotificationFn,
-    ] as NodejsFunction[]).forEach(fn => fn.addEnvironment('AWS_ENDPOINT_URL_SES', props.botUrl));
-    if (!this.passwordless.fido2Api)
-      throw new Error('passwordless.fido2Api is undefined');
-
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.passwordless.userPool.userPoolId,
     });
@@ -85,6 +83,8 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     const [userPoolClient] = this.passwordless.userPoolClients || [];
     if (!userPoolClient)
       throw new Error('this.passwordless.userPoolClients is undefined');
+    if (!this.passwordless.fido2Api)
+      throw new Error('passwordless.fido2Api is undefined');
     const outputs: Config = {
       cognitoIdpEndpoint: this.region,
       clientId: new cdk.CfnOutput(this, 'UserPoolClientId', {
@@ -131,7 +131,8 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     const authorizer = this.node.findChild('CognitoAuthorizer' + this.passwordless.node.id) as CognitoUserPoolsAuthorizer;
     const requestValidator = this.node.findChild('ReqValidator') as RequestValidator;
 
-    restApi.root.addResource('verify').addMethod('GET', integration, {
+    const verifyResource = restApi.root.addResource('verify');
+    verifyResource.addMethod('GET', integration, {
       authorizer,
       requestValidator,
       methodResponses: [{
@@ -141,5 +142,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
         },
       }],
     });
+
+    this.verifyApiUrl = restApi.urlForPath(verifyResource.path);
   }
 }

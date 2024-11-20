@@ -66,7 +66,6 @@ export default class HelloEcsStack extends cdk.Stack {
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
-      // containerInsights: true,
       enableFargateCapacityProviders: true,
       defaultCloudMapNamespace: {
         name: 'foo',

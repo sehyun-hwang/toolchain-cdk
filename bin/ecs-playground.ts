@@ -18,21 +18,25 @@ const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygro
   env,
 });
 
-new BastionStack(app, 'BastionStack', {
-  env,
-  vpc,
-  loadBalancerServiceBase,
-});
-
 const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
   env,
   passwordlessFrontendDistFolderPath: PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH,
 });
 
 const { listener } = loadBalancerServiceBase;
-new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
+const { verifyApiUrl } = new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
   env,
   listener,
   botUrl: 'https://eo20dnx5kq1d0eb.m.pipedream.net',
   distributionDomainName,
+});
+
+new BastionStack(app, 'BastionStack', {
+  env,
+  vpc,
+  loadBalancerServiceBase,
+  nginxEnvironment: {
+    API_GATEWAY_AUTH_URL: verifyApiUrl,
+    ALLOWED_ORIGIN: 'https://' + distributionDomainName,
+  },
 });

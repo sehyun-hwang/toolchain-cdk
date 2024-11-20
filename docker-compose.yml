@@ -1,3 +1,5 @@
+# Refactored from https://github.com/sehyun-hwang/toolchain-cdk/blob/6cbd3e663dc7dc8b2665a1cd96df445f783548db/bastion/pod.yml
+
 services:
   # ttyd-frontend:
 
@@ -16,10 +18,7 @@ services:
     network_mode: container:pypm
     environment:
       API_GATEWAY_AUTH_URL: https://postman-echo.com/response-headers?X-Cognito-Identity-Id=mock-cognito-identity-id
-    entrypoint:
-      - /bin/entrypoint.sh
-    command:
-      - /usr/local/openresty/bin/openresty
+      ALLOWED_ORIGIN: http://localhost:5173
     volumes:
       - run-ttyd:/run/ttyd
       - ./bastion/entrypoint.sh:/bin/entrypoint.sh
