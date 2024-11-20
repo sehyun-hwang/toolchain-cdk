@@ -1,4 +1,5 @@
 local user_id = ngx.var.auth_congnito_identity_id:gsub("-", "_")
+local process_id = string.format("user_id__%s", user_id)
 local hmac_key = os.getenv("HMAC_KEY")
 
 local sock = ngx.socket.tcp()
@@ -11,7 +12,7 @@ end
 sock:settimeout(1000) -- one second timeout
 local bytes, err = sock:send(string.format(
     'addproc %s "ttyd -i /run/ttyd/%s.sock -U nginx:nginx -W tmux new -As default" False False .\n',
-    user_id, user_id))
+    process_id, user_id))
 
 if err then
     ngx.say("failed to write: ", err)
@@ -35,7 +36,7 @@ if not ok then
 end
 
 sock:settimeout(1000) -- one second timeout
-local bytes, err = sock:send(string.format('startproc %s\n', user_id))
+local bytes, err = sock:send(string.format('startproc %s\n', process_id))
 
 if err then
     ngx.say("failed to write: ", err)
