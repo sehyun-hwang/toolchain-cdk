@@ -20,6 +20,7 @@ export default function useTtydWsUrl() {
     const { sub } = tokensParsed.idToken;
 
     fetch(VITE_API_BASE + '/spawn', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${tokens.idToken}`,
       },
