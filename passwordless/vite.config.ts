@@ -1,7 +1,7 @@
+import { glob, readFile } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import { readFile } from 'node:fs/promises';
 
-import { defineConfig, loadEnv } from 'vite';
+import { type PluginOption, defineConfig, loadEnv } from 'vite';
 import type { AppClient } from 'cognito-local/lib/services/appClient';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import Pino from 'pino';
@@ -55,18 +55,24 @@ export default defineConfig(async ({ mode }) => {
   };
   console.log(define);
   const { VITE_API_BASE } = loadEnv(mode, process.cwd());
+
+  const { value: ttydJsPath } = await glob('ttyd/terminal.*.js')[Symbol.asyncIterator]().next();
+  console.log({ ttydJsPath });
+  const urlResolvePlugin: PluginOption = ttydJsPath ? {} : {
+    name: 'rollup-plugin-url-resolve',
+    enforce: 'pre',
+    ...urlResolve(),
+  };
+
   return {
     resolve: {
-      alias: [
-        { find: '@ttyd-terminal', replacement: 'http://localhost:9000/terminal.754c44763d540d534ad4.js' },
-      ],
+      alias: [{
+        find: '@ttyd-terminal',
+        replacement: ttydJsPath || 'http://localhost:9000/terminal.754c44763d540d534ad4.js',
+      }],
     },
     plugins: [
-      {
-        name: 'rollup-plugin-url-resolve',
-        enforce: 'pre',
-        ...urlResolve(),
-      },
+      urlResolvePlugin,
       preact(),
       generateFile([{
         type: 'json',

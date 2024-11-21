@@ -1,7 +1,14 @@
 # Refactored from https://github.com/sehyun-hwang/toolchain-cdk/blob/6cbd3e663dc7dc8b2665a1cd96df445f783548db/bastion/pod.yml
 
 services:
-  # ttyd-frontend:
+  ttyd-frontend:
+    build:
+      context: passwordless
+      additional_contexts:
+        ttyd-git: https://github.com/tsl0922/ttyd.git
+      target: ttyd-frontend
+    ports:
+      - 9000:9000
 
   pypm:
     container_name: pypm

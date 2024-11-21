@@ -5,6 +5,7 @@ import StepUpAuth from "./StepUpAuth";
 import { useState, useRef, useEffect } from 'preact/hooks';
 import type { Component } from "preact";
 
+// @ts-ignore
 import * as _terminal from '@ttyd-terminal';
 import terminalProps from './terminal';
 import useTtydWsUrl from './nginx';
