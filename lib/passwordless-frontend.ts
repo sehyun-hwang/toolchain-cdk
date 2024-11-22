@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { spawnSync } from 'child_process';
+import { symlinkSync } from 'fs';
 
 import * as cdk from 'aws-cdk-lib';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
@@ -13,12 +14,13 @@ interface PasswordlessFrontendStackProps extends cdk.StackProps {
 }
 
 const DOCKER_EXECUTABLE = process.env.CDK_DOCKER ?? 'docker';
+const CONTAINER_NAME = 'cdk-passwordless-frontend';
 
 export default class PasswordlessFrontendStack extends cdk.Stack {
   distributionDomainName: string;
 
   // eslint-disable-next-line class-methods-use-this
-  buildContainer() {
+  buildContainer(exclude: string[]) {
     const args = [
       'build',
       'passwordless',
@@ -28,9 +30,9 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
     ];
     const hash = cdk.FileSystem.fingerprint('passwordless', {
       extraHash: args.join(' '),
-      exclude: ['node_modules', 'dist', '.cognito'],
+      exclude,
     });
-    const tag = 'cdk-' + createHash('sha256')
+    const tag = CONTAINER_NAME + ':' + createHash('sha256')
       .update(hash)
       .update(args.join(' '))
       .digest('hex');
@@ -73,20 +75,28 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
       ResponseHeadersPolicy.SECURITY_HEADERS.responseHeadersPolicyId,
     );
 
+    const path = cdk.FileSystem.mkdtemp('passwordless-frontend-asset-input-');
+    const exclude = ['node_modules', 'dist', '.cognito'];
+    cdk.FileSystem.copyDirectory(process.cwd() + '/passwordless', path, {
+      exclude,
+    });
+    symlinkSync('/mnt/node_modules', path + '/node_modules');
+    symlinkSync('/mnt/ttyd', path + '/ttyd');
+    console.log('Frontend temp dir', path);
+
     const asset = new Asset(this, 'BundledAsset', {
-      path: 'passwordless',
+      path,
       bundling: {
-        image: this.buildContainer(),
-        workingDirectory: '/mnt/asset-input',
+        image: this.buildContainer(exclude),
         command: ['pnpm', 'build', '--outDir', '/asset-output'],
         outputType: cdk.BundlingOutput.NOT_ARCHIVED,
-        user: 'root:root',
+        user: 'root:root', // For rootless container runtimes
       },
     });
+    console.log('Frontend asset path', asset.assetPath);
 
-    Source.bucket(asset.bucket, asset.s3ObjectKey);
-    new BucketDeployment(this, 'BucketDeployment', {
-      sources: [Source.asset(props.passwordlessFrontendDistFolderPath)],
+    const bucketDeployment = new BucketDeployment(this, 'BucketDeployment', {
+      sources: [Source.bucket(asset.bucket, asset.s3ObjectKey)],
       destinationBucket,
       distribution,
     });

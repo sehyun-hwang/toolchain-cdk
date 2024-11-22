@@ -33,6 +33,4 @@ RUN corepack enable pnpm \
 COPY --from=ttyd-frontend /mnt/dist/*.js ttyd/
 COPY . ./
 
-RUN pnpm build
-
-CMD ["pnpm", "preview"]
+CMD ["pnpm", "dev"]
