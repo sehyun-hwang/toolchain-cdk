@@ -45,9 +45,6 @@ export default function App() {
     <div className="app">
       <div>This YOUR app</div>
       <div>Hi there {tokensParsed?.idToken.email}</div>
-      <div style={{
-        wordBreak: 'break-all',
-      }}>{tokens?.idToken}</div>
 
       {ttydWsUrl && <Terminal wsUrl={ttydWsUrl} {...terminalProps} />}
 

@@ -28,7 +28,7 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
     ];
     const hash = cdk.FileSystem.fingerprint('passwordless', {
       extraHash: args.join(' '),
-      exclude: ['node_modules', 'dist'],
+      exclude: ['node_modules', 'dist', '.cognito'],
     });
     const tag = 'cdk-' + createHash('sha256')
       .update(hash)
