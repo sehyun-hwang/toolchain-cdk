@@ -1,0 +1,36 @@
+# Refactored from https://github.com/sehyun-hwang/toolchain-cdk/blob/6cbd3e663dc7dc8b2665a1cd96df445f783548db/bastion/pod.yml
+
+services:
+  ttyd-frontend:
+    build:
+      context: passwordless
+      additional_contexts:
+        ttyd-git: https://github.com/tsl0922/ttyd.git
+      target: ttyd-frontend
+    ports:
+      - 9000:9000
+
+  pypm:
+    container_name: pypm
+    build: bastion/ttyd
+    ports:
+      - 8889:80
+    volumes:
+      - run-ttyd:/run/ttyd
+
+  nginx:
+    build: bastion
+    depends_on:
+      - pypm
+    network_mode: container:pypm
+    environment:
+      API_GATEWAY_AUTH_URL: https://postman-echo.com/response-headers?X-Cognito-Identity-Id=mock-cognito-identity-id
+      ALLOWED_ORIGIN: http://localhost:5173
+    volumes:
+      - run-ttyd:/run/ttyd
+      - ./bastion/entrypoint.sh:/bin/entrypoint.sh
+      - ./bastion/conf:/etc/nginx/conf.d
+      - ./bastion/lua:/etc/nginx/lua
+
+volumes:
+  run-ttyd:

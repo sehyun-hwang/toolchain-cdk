@@ -1,0 +1,12 @@
+diff --git a/lib/services/tokenGenerator.js b/lib/services/tokenGenerator.js
+index a0d63d7e0b9c5259f00dc4252c6b42e27f4cccce..c3a31e73a8cd7065be7bdaa35876c9b6353c8951 100644
+--- a/lib/services/tokenGenerator.js
++++ b/lib/services/tokenGenerator.js
+@@ -122,6 +122,7 @@ class JwtTokenGenerator {
+     }
+     const issuer = `${this.tokenConfig.IssuerDomain}/${userPoolClient.UserPoolId}`;
+     return {
++      ExpiresIn: 300,
+       AccessToken: import_jsonwebtoken.default.sign(accessToken, import_cognitoLocal_private.default.pem, {
+         algorithm: "RS256",
+         issuer,

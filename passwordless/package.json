@@ -1,0 +1,37 @@
+{
+  "name": "amazon-cognito-passwordless-auth-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --force",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@cloudscape-design/global-styles": "^1.0.27",
+    "@xterm/xterm": "^5.5.0",
+    "amazon-cognito-passwordless-auth": "^0.14.0",
+    "preact": "^10.23.2",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.9.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "cognito-local": "^3.23.3",
+    "pino": "^7.11.0",
+    "rollup-plugin-url-resolve": "^0.2.0",
+    "s3-spa-upload": "^2.1.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vite-plugin-generate-file": "^0.2.0"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "cognito-local": "patches/cognito-local.patch"
+    }
+  }
+}
