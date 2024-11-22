@@ -12,3 +12,13 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `npx cdk deploy`  deploy this stack to your default AWS account/region
 * `npx cdk diff`    compare deployed stack with current state
 * `npx cdk synth`   emits the synthesized CloudFormation template
+
+
+```sh
+aws ec2-instance-connect send-ssh-public-key \
+    --instance-id i-0167a3a862b30c119 \
+    --instance-os-user ec2-user \
+    --ssh-public-key file:///root/.ssh/id_ed25519.pub
+
+ssh ec2-user@172.31.40.94
+```

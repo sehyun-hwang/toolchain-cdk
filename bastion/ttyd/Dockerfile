@@ -5,9 +5,12 @@ FROM alpine
 COPY --from=ttyd /usr/bin/ttyd /usr/bin/ttyd
 
 RUN apk add --no-cache \
+	# pypm 
 	py3-pip py3-psutil \
-	aws-cli \
-	tmux fish
+	# terminal
+	tmux fish \
+	# user-land
+	openssh-client git aws-cli
 
 RUN pip install --user --break-system-packages --no-cache-dir --no-deps python-pm \
 	&& pip install --user --break-system-packages --no-cache-dir termtables>=0.2.2 colorama>=0.4.3

@@ -17,6 +17,7 @@ import { Construct } from 'constructs';
 import { DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 interface BastionStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -40,6 +41,32 @@ export default class BastionStack extends cdk.Stack {
         cpuArchitecture: CpuArchitecture.ARM64,
       },
     });
+    const policy = new Policy(this, 'EC2SshPolicy', {
+      statements: [
+        new PolicyStatement({
+          actions: [
+            'ec2:DescribeInstances',
+            'ec2:DescribeImages',
+          ],
+          resources: ['*'],
+          conditions: {
+            StringEquals: {
+              'ec2:Region': this.region,
+            },
+          },
+        }),
+        new PolicyStatement({
+          actions: ['ec2-instance-connect:SendSSHPublicKey'],
+          resources: [cdk.Arn.format({
+            service: 'ec2',
+            resource: 'instance',
+            resourceName: '*',
+          }, this)],
+        }),
+      ],
+    });
+    taskDefinition.taskRole.attachInlinePolicy(policy);
+
     // @ts-expect-error protected
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
     const scratchSpace: ScratchSpace = {
