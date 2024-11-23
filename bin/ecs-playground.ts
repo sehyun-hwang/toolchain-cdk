@@ -4,6 +4,7 @@ import BastionStack from '../lib/bastion';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
+import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
 
@@ -16,6 +17,11 @@ const app = new cdk.App();
 
 const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
   env,
+});
+
+new VsCodeEc2Stack(app, 'VsCodeEc2Stack', {
+  env,
+  vpc,
 });
 
 const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
