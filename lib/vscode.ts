@@ -22,6 +22,10 @@ export default class VsCodeEc2Stack extends cdk.Stack {
           architecture: ['arm64'],
         },
       }),
+      blockDevices: [{
+        deviceName: '/dev/xvda',
+        volume: ec2.BlockDeviceVolume.ebs(32),
+      }],
       keyPair: ec2.KeyPair.fromKeyPairName(this, 'KeyPair', `aws-${this.account}-${this.region}`),
       availabilityZone: this.region + 'a',
     };
