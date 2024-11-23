@@ -34,6 +34,15 @@
             openssh.authorizedKeys.keys  = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIONFCHikp7AoWYCj8aCtIO1rBAN0hB2gwtoEM/LjWA5p centos@www.hwangsehyun.com" ];
             uid = 1000;
           };
+
+          services.openssh.extraConfig = "";
+          security.sudo.extraRules = [{
+              users = [ "ec2-user" ];
+              commands = [{
+                command = "ALL";
+                options = [ "NOPASSWD" ];
+              }];
+          }];
         }
 
         home-manager.nixosModules.home-manager
@@ -42,40 +51,34 @@
             home.stateVersion = "24.05";
             home.packages = [];
             programs.fish.enable = true;
-          };
 
-          /*
-          services.openssh.extraConfig = "";
-
-          programs.atuin.enable = true;
-          programs.atuin.enableFishIntegration = true;
-          programs.awscli.enable = true;
-          programs.awscli.settings.default = {
-            sso_account_id = "248837585826";
-            region = "ap-northeast-2";
-            sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
-            sso_region = "us-east-1";
-            sso_registration_scopes = "sso:account:access";
-            sso_role_name = "AdministratorAccess";
+            programs.atuin.enable = true;
+            programs.atuin.enableFishIntegration = true;
+            programs.awscli.enable = true;
+            programs.awscli.settings.default = {
+              sso_account_id = "248837585826";
+              region = "ap-northeast-2";
+              sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
+              sso_region = "us-east-1";
+              sso_registration_scopes = "sso:account:access";
+              sso_role_name = "AdministratorAccess";
+            };
+            programs.bat.enable = true;
+            programs.gh.enable = true;
+            programs.git.enable = true;
+            programs.git.lfs.enable = true;
+            programs.git.ignores = [ "DS_Store" ];
+            programs.command-not-found.enable = true;
+            programs.go.enable = true;
+            programs.lazygit.enable = true;
+            programs.poetry.enable = true;
+            programs.powerline-go.enable  = true;
+            programs.vim.enable = true;
+            programs.vim.defaultEditor = true;
+            programs.vim.settings = {
+              number = true;
+            };
           };
-          programs.atuin.enable = true;
-          programs.bat.enable = true;
-          programs.fish.enable = true;
-          programs.gh.enable = true;
-          programs.git.enable = true;
-          programs.git.lfs.enable = true;
-          programs.git.ignores = [ "DS_Store" ];
-          programs.command-not-found.enable = true;
-          programs.go.enable = true;
-          programs.lazygit.enable = true;
-          programs.poetry.enable = true;
-          programs.powerline-go.enable  = true;
-          programs.vim.enable = true;
-          programs.vim.defaultEditor = true;
-          programs.vim.settings = {
-            number = true;
-          };
-          */
         }
       ];
     };
