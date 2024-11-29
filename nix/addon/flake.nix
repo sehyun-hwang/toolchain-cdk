@@ -107,6 +107,7 @@
             {
               programs.fish.enable = true;
               environment.systemPackages = with pkgs; [
+                buildkit
                 nerdctl
               ];
               users.users.ec2-user = {

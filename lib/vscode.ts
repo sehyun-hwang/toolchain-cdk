@@ -25,15 +25,21 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       }),
       blockDevices: [{
         deviceName: '/dev/xvda',
-        volume: ec2.BlockDeviceVolume.ebs(32),
+        volume: ec2.BlockDeviceVolume.ebs(32, {
+          encrypted: true,
+        }),
       }],
       keyPair: ec2.KeyPair.fromKeyPairName(this, 'KeyPair', `aws-${this.account}-${this.region}`),
       availabilityZone: this.region + 'a',
+      hibernationEnabled: true,
     };
-
     const instance = new ec2.Instance(this, 'Instance', instanceProps);
+
+    const efsSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(this, 'EfsSecurityGroup', 'sg-042fdc617ba6bff47', {
+      mutable: false,
+    });
+    instance.addSecurityGroup(efsSecurityGroup);
     instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH');
-    instance.connections.allowInternally(ec2.Port.tcp(2049), 'EFS');
     instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
   }
 }
