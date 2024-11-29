@@ -5,4 +5,4 @@ RUN nix-env --install nixos-rebuild vim \
 WORKDIR /mnt
 
 COPY flake.nix /mnt/
-RUN nixos-rebuild --flake .#ec2-dev build
+RUN nixos-rebuild --flake .#ec2-dev build --fast
