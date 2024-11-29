@@ -33,6 +33,7 @@ export default class VsCodeEc2Stack extends cdk.Stack {
 
     const instance = new ec2.Instance(this, 'Instance', instanceProps);
     instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH');
+    instance.connections.allowInternally(ec2.Port.tcp(2049), 'EFS');
     instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
   }
 }

@@ -77,7 +77,8 @@
       "inputs": {
         "home-manager": "home-manager",
         "my-new": "my-new",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "vscode-cli-json-path": "vscode-cli-json-path"
       }
     },
     "systems": {
@@ -93,6 +94,18 @@
         "owner": "nix-systems",
         "repo": "default",
         "type": "github"
+      }
+    },
+    "vscode-cli-json-path": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-jlXboGUy6QHUTC7Aj0syTpNOHUsc3Z1tcweEvBy8yNs=",
+        "type": "file",
+        "url": "https://code.visualstudio.com/sha"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://code.visualstudio.com/sha"
       }
     }
   },

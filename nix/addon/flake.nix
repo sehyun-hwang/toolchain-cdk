@@ -6,6 +6,9 @@
 
     my-new.url = "path:my-new-project";
     my-new.inputs.nixpkgs.follows = "nixpkgs";
+
+    vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
+    vscode-cli-json-path.flake = false;
   };
 
   outputs =
@@ -14,6 +17,7 @@
       nixpkgs,
       home-manager,
       my-new,
+      vscode-cli-json-path,
     }:
     {
 
@@ -28,7 +32,7 @@
             swapDevices = [
               {
                 device = "/var/lib/swapfile";
-                size = 16 * 1024; # MB
+                size = 6 * 1024; # MB
               }
             ];
             nix.settings.experimental-features = [
@@ -54,7 +58,6 @@
                 "networkmanager"
                 "ec2-user"
               ];
-              # @TODO curl -H "X-aws-ec2-metadata-token: $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
               openssh.authorizedKeys.keys = [
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIONFCHikp7AoWYCj8aCtIO1rBAN0hB2gwtoEM/LjWA5p centos@www.hwangsehyun.com"
               ];
@@ -63,6 +66,7 @@
             users.groups.ec2-user.gid = 1000;
 
             services.openssh.settings.PasswordAuthentication = false;
+            # https://infosec.mozilla.org/guidelines/openssh#modern-openssh-67
             services.openssh.settings.KexAlgorithms = [
               "curve25519-sha256@libssh.org"
               "ecdh-sha2-nistp521"
@@ -81,6 +85,12 @@
                 ];
               }
             ];
+
+            # mandb build fails due to fish
+            documentation.man = {
+              man-db.enable = false;
+              mandoc.enable = true;
+            };
           }
 
           (
@@ -158,10 +168,7 @@
                 '';
 
                 installPhase = ''
-                  mkdir -p $out/bin
-                  cp hello $out/bin/
-                  cd src/bin
-                  mv eic_curl_authorized_keys eic_parse_authorized_keys $out/bin/
+                  install -D -t $out/bin hello src/bin/eic_curl_authorized_keys src/bin/eic_parse_authorized_keys
                 '';
 
                 solutions.curl = {
@@ -201,26 +208,18 @@
               };
             in
             {
-              # environment.etc."ssl/openssl.cnf" = {
-              #   text = builtins.fetchurl {
-              #     url = "https://raw.githubusercontent.com/openssl/openssl/21f7a09ca256eee0ccc9a8fc498e8427469ab506/apps/openssl.cnf";
-              #     sha256 = "1206z64mn7zjvww3s3ssaaz5cq0v3p9jcsc441s21zsajpzna31s";
-              #   };
-              # };
               system.activationScripts.createEc2InstanceConnectLogFile = lib.stringAfter [ "var" ] ''
                 install -m 666 /dev/null /var/log/ec2-instance-connect.log
               '';
-
               environment.systemPackages = [ ec2-instance-connect ];
-
               environment.etc.eic_run_authorized_keys = {
                 mode = "0755";
                 text = ''
                   #!${pkgs.bash}/bin/sh
+                  curl -H "X-aws-ec2-metadata-token: $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
                   exec ${pkgs.coreutils}/bin/timeout 5s ${ec2-instance-connect}/bin/eic_curl_authorized_keys "$@" 
                 '';
               };
-
               users.users.ec2-instance-connect = {
                 isSystemUser = true;
                 group = "nogroup";
@@ -228,12 +227,21 @@
 
               services.openssh.authorizedKeysCommand = "/etc/eic_run_authorized_keys %u %f";
               services.openssh.authorizedKeysCommandUser = "ec2-instance-connect";
-              services.openssh.settings.LogLevel = "DEBUG3";
+              # services.openssh.settings.LogLevel = "DEBUG3";
 
-              # mandb build fails due to fish
-              documentation.man = {
-                man-db.enable = false;
-                mandoc.enable = true;
+              fileSystems."/mnt" = {
+                device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
+                fsType = "nfs";
+                # https://docs.aws.amazon.com/efs/latest/ug/mounting-fs-mount-cmd-dns-name.html
+                options = [
+                  "nfsvers=4.1"
+                  "rsize=1048576"
+                  "wsize=1048576"
+                  "hard"
+                  "timeo=600"
+                  "retrans=2"
+                  "noresvport"
+                ];
               };
             }
           )
@@ -241,10 +249,40 @@
           home-manager.nixosModules.home-manager
           {
             home-manager.users.ec2-user =
-              { pkgs, ... }:
+              { pkgs, lib, ... }:
+              let
+                vscode-cli-os = if pkgs.stdenv.isLinux then "alpine" else "darwin";
+                vscode-cli-arch = if pkgs.stdenv.isAarch64 then "arm64" else "x64";
+                vscode-cli-source-json = builtins.fromJSON (builtins.readFile vscode-cli-json-path);
+                vscode-cli-product = lib.lists.findFirst (
+                  product:
+                  product.build == "stable" && product.platform.os == "cli-${vscode-cli-os}-${vscode-cli-arch}"
+                ) null vscode-cli-source-json.products;
+
+                vscode-cli = pkgs.stdenv.mkDerivation {
+                  pname = "vscode-cli";
+                  version = vscode-cli-product.productVersion;
+                  sourceRoot = ".";
+                  src = builtins.fetchurl {
+                    url = vscode-cli-product.url;
+                    sha256 = vscode-cli-product.sha256hash;
+                  };
+
+                  installPhase = ''
+                    ./code --version
+                    install -D -t $out/bin code
+                  '';
+                };
+              in
               {
                 home.stateVersion = "24.05";
-                home.packages = [ ];
+                home.packages = with pkgs; [
+                  vscode-cli
+                  nodejs_22
+                  pnpm
+                ] ++ (with pkgs.nodePackages; [
+                  eslint
+                ]);
 
                 programs.awscli.enable = true;
                 programs.bat.enable = true;
