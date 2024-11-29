@@ -9,6 +9,9 @@
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
+    nix-index-database.url = "github:nix-community/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -18,6 +21,8 @@
       home-manager,
       my-new,
       vscode-cli-json-path,
+      vscode-server,
+      nix-index-database
     }:
     {
 
@@ -26,6 +31,9 @@
 
         modules = [
           "${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"
+          home-manager.nixosModules.home-manager
+          vscode-server.nixosModules.default
+          nix-index-database.nixosModules.nix-index
 
           {
             ec2.efi = true;
@@ -62,6 +70,7 @@
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIONFCHikp7AoWYCj8aCtIO1rBAN0hB2gwtoEM/LjWA5p centos@www.hwangsehyun.com"
               ];
               uid = 1000;
+              linger = true;
             };
             users.groups.ec2-user.gid = 1000;
 
@@ -97,6 +106,9 @@
             { pkgs, ... }:
             {
               programs.fish.enable = true;
+              environment.systemPackages = with pkgs; [
+                nerdctl
+              ];
               users.users.ec2-user = {
                 shell = pkgs.fish;
               };
@@ -246,8 +258,12 @@
             }
           )
 
-          home-manager.nixosModules.home-manager
           {
+            home-manager.sharedModules = [
+              vscode-server.homeModules.default
+              nix-index-database.hmModules.nix-index
+            ];
+
             home-manager.users.ec2-user =
               { pkgs, lib, ... }:
               let
@@ -277,12 +293,16 @@
               {
                 home.stateVersion = "24.05";
                 home.packages = with pkgs; [
-                  vscode-cli
+                  corepack_22
+                  gnumake
                   nodejs_22
-                  pnpm
+                  vscode-cli
                 ] ++ (with pkgs.nodePackages; [
                   eslint
                 ]);
+
+                services.vscode-server.enable = true;
+                services.vscode-server.installPath = "$HOME/.vscode";
 
                 programs.awscli.enable = true;
                 programs.bat.enable = true;
@@ -291,12 +311,11 @@
                 programs.git.enable = true;
                 programs.go.enable = true;
                 programs.lazygit.enable = true;
+                programs.nix-index.enable = true;
                 programs.poetry.enable = true;
                 programs.starship.enable = true;
                 programs.vim.enable = true;
 
-                programs.git.lfs.enable = true;
-                programs.git.ignores = [ "DS_Store" ];
                 programs.awscli.settings.default = {
                   sso_account_id = "248837585826";
                   region = "ap-northeast-1";
@@ -305,6 +324,9 @@
                   sso_registration_scopes = "sso:account:access";
                   sso_role_name = "AdministratorAccess";
                 };
+                programs.git.lfs.enable = true;
+                programs.git.ignores = [ "DS_Store" ];
+                programs.nix-index.enableFishIntegration = true;
                 programs.vim.defaultEditor = true;
                 programs.vim.settings = {
                   number = true;
