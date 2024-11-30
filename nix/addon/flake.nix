@@ -104,7 +104,8 @@
 
           (
             { pkgs, ... }:
-            {
+
+            {              
               programs.fish.enable = true;
               environment.systemPackages = with pkgs; [
                 buildkit
@@ -112,6 +113,7 @@
                 rootlesskit
                 slirp4netns
                 wget
+                runc
               ];
               users.users.ec2-user = {
                 shell = pkgs.fish;
@@ -271,6 +273,21 @@
             home-manager.users.ec2-user =
               { pkgs, lib, ... }:
               let
+
+                containerd-rootless-setuptool = pkgs.stdenv.mkDerivation {
+                  pname = "containerd-rootless-setuptool";
+                  version = pkgs.nerdctl.version;
+                  src = "${pkgs.nerdctl.src}/extras/rootless";
+
+                  buildPhase = ''
+                    sed -i '1 ! s=/bin/==g' *.sh
+                  '';
+
+                  installPhase = ''
+                    install -D -t $out/bin *.sh
+                  '';
+                };
+
                 vscode-cli-os = if pkgs.stdenv.isLinux then "alpine" else "darwin";
                 vscode-cli-arch = if pkgs.stdenv.isAarch64 then "arm64" else "x64";
                 vscode-cli-source-json = builtins.fromJSON (builtins.readFile vscode-cli-json-path);
@@ -300,7 +317,9 @@
                   corepack_22
                   gnumake
                   nodejs_22
+
                   vscode-cli
+                  containerd-rootless-setuptool
                 ] ++ (with pkgs.nodePackages; [
                   eslint
                 ]);
