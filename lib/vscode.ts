@@ -32,6 +32,7 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       keyPair: ec2.KeyPair.fromKeyPairName(this, 'KeyPair', `aws-${this.account}-${this.region}`),
       availabilityZone: this.region + 'a',
       hibernationEnabled: true,
+      allowAllIpv6Outbound: true,
     };
     const instance = new ec2.Instance(this, 'Instance', instanceProps);
 
