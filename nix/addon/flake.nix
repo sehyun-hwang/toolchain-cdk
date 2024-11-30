@@ -109,6 +109,9 @@
               environment.systemPackages = with pkgs; [
                 buildkit
                 nerdctl
+                rootlesskit
+                slirp4netns
+                wget
               ];
               users.users.ec2-user = {
                 shell = pkgs.fish;
