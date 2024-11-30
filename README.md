@@ -16,9 +16,9 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ```sh
 aws ec2-instance-connect send-ssh-public-key \
-    --instance-id i-0167a3a862b30c119 \
+    --instance-id i-0bcfbd01cb66d3fe5 \
     --instance-os-user ec2-user \
     --ssh-public-key file:///root/.ssh/id_ed25519.pub
 
-ssh ec2-user@172.31.40.94
+ssh ec2-user@172.31.44.183
 ```
