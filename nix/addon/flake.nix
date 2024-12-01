@@ -105,11 +105,12 @@
             programs.fish.enable = true;
             environment.systemPackages = with pkgs; [
               buildkit
+              iotop
               nerdctl
               rootlesskit
+              runc
               slirp4netns
               wget
-              runc
             ];
             users.users.ec2-user = {
               shell = pkgs.fish;
@@ -319,15 +320,26 @@
             home.stateVersion = "24.05";
             home.packages = with pkgs;
               [
+                alejandra
+                black
                 corepack_22
                 gnumake
+                hadolint
+                markdownlint-cli2
                 nodejs_22
+                oxlint
+                ruff
+                shfmt
+                stylelint
+                typos
+                typos-lsp
 
                 vscode-cli
                 containerd-rootless-setuptool
               ]
               ++ (with pkgs.nodePackages; [
                 eslint
+                prettier
               ]);
 
             services.vscode-server.enable = true;
@@ -353,8 +365,13 @@
               sso_registration_scopes = "sso:account:access";
               sso_role_name = "AdministratorAccess";
             };
-            programs.git.lfs.enable = true;
-            programs.git.ignores = ["DS_Store"];
+            programs.git = {
+              userName = "Sehyun Hwang";
+              userEmail = "hwanghyun3@gmail.com";
+              lfs.enable = true;
+              ignores = ["DS_Store"];
+            };
+
             programs.nix-index.enableFishIntegration = true;
             programs.vim.defaultEditor = true;
             programs.vim.settings = {

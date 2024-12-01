@@ -55,7 +55,7 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       instanceType: new ec2.InstanceType(
         cdk.Fn.conditionIf(
           isUsRegionCondition.logicalId,
-          'c8g.' + ec2.InstanceSize.MEDIUM,
+          'm8g.' + ec2.InstanceSize.MEDIUM,
           ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL).toString(),
         ) as unknown as string,
       ),
