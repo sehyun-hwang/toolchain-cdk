@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:06kellyjac/nixpkgs/nerdctl";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     home-manager.url = "github:nix-community/home-manager/release-24.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -34,6 +34,7 @@
 
         {
           ec2.efi = true;
+          system.stateVersion = "24.05";
           swapDevices = [
             {
               device = "/var/lib/swapfile";
@@ -241,7 +242,8 @@
             # services.openssh.settings.LogLevel = "DEBUG3";
 
             fileSystems."/mnt" = {
-              device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
+              # device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
+              device = "172.31.33.129:/";
               fsType = "nfs";
               # https://docs.aws.amazon.com/efs/latest/ug/mounting-fs-mount-cmd-dns-name.html
               options = [

@@ -22,6 +22,15 @@ const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygro
 new VsCodeEc2Stack(app, 'VsCodeEc2Stack', {
   env,
   vpc,
+  efsSecurityGroupId: 'sg-042fdc617ba6bff47',
+});
+
+new VsCodeEc2Stack(app, 'VsCodeEc2Stack-Us', {
+  env: {
+    account: env.account,
+    region: 'us-west-2',
+  },
+  efsSecurityGroupId: 'sg-00b197c59a79424c6',
 });
 
 const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {

@@ -1,6 +1,6 @@
 FROM nixos/nix
 
-RUN nix-env --install nixos-rebuild vim \
+RUN nix-env -i nixos-rebuild vim \
 	&& mkdir /mnt
 WORKDIR /mnt
 

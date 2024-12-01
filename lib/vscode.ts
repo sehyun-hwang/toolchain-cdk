@@ -1,21 +1,64 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { ManagedPolicy, PolicyStatement, StarPrincipal } from 'aws-cdk-lib/aws-iam';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
-import { ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 
 interface VsCodeEc2StackProps extends cdk.StackProps {
-  vpc: ec2.IVpc;
+  vpc?: ec2.IVpc;
+  efsSecurityGroupId: string;
 }
 
 export default class VsCodeEc2Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: VsCodeEc2StackProps) {
     super(scope, id, props);
 
-    const { vpc } = props;
+    const vpc = props.vpc || ec2.Vpc.fromLookup(this, 'Vpc', {
+      vpcId: 'vpc-0ae899f9b16f02f06',
+    });
 
+    const bucket = new Bucket(this, 'NixCacheBucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    this.exportValue(bucket.bucketDomainName);
+    const result = bucket.addToResourcePolicy(
+      new PolicyStatement({
+        actions: [
+          's3:AbortMultipartUpload',
+          's3:GetBucketLocation',
+          's3:GetObject',
+          's3:ListBucket',
+          's3:ListBucketMultipartUploads',
+          's3:ListMultipartUploadParts',
+          's3:PutObject',
+        ],
+        resources: [
+          bucket.bucketArn,
+          bucket.arnForObjects('*'),
+        ],
+        principals: [new StarPrincipal()],
+        conditions: {
+          StringEquals: {
+            'aws:SourceVpc': vpc.vpcId,
+          },
+        },
+      }),
+    );
+    if (!result.statementAdded)
+      throw new Error();
+
+    const isUsRegionCondition = new cdk.CfnCondition(this, 'IsUsRegion', {
+      expression: cdk.Fn.conditionEquals(cdk.Fn.select(0, cdk.Fn.split('-', this.region, 1)), 'us'),
+    });
     const instanceProps: ec2.InstanceProps = {
       vpc,
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
+      instanceType: new ec2.InstanceType(
+        cdk.Fn.conditionIf(
+          isUsRegionCondition.logicalId,
+          'c8g.' + ec2.InstanceSize.MEDIUM,
+          ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL).toString(),
+        ) as unknown as string,
+      ),
       machineImage: ec2.MachineImage.lookup({
         owners: [(427812963091).toString()],
         name: 'nixos/24.05.6632.*',
@@ -30,17 +73,20 @@ export default class VsCodeEc2Stack extends cdk.Stack {
         }),
       }],
       keyPair: ec2.KeyPair.fromKeyPairName(this, 'KeyPair', `aws-${this.account}-${this.region}`),
-      availabilityZone: this.region + 'a',
       hibernationEnabled: true,
       allowAllIpv6Outbound: true,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC,
+        availabilityZones: [this.region + 'a'],
+      },
     };
     const instance = new ec2.Instance(this, 'Instance', instanceProps);
-
-    const efsSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(this, 'EfsSecurityGroup', 'sg-042fdc617ba6bff47', {
+    const efsSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(this, 'EfsSecurityGroup', props.efsSecurityGroupId, {
       mutable: false,
     });
     instance.addSecurityGroup(efsSecurityGroup);
-    instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH');
+    instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH IP v4');
+    instance.connections.allowFrom(ec2.Peer.anyIpv6(), ec2.Port.tcp(22), 'SSH IP v6');
     instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
   }
 }
