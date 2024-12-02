@@ -23,9 +23,10 @@ rec {
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
     ];
-    secret-key-files = /etc/nix/key.private;
-    # @TODO
-    # post-build-hook = /etc/nix/upload-to-cache.sh;
+    secret-key-files = "/etc/nix/key.private";
+    # post-build-hook = "echo";
+    # @TODO Needs testing
+    post-build-hook = /etc/nix/upload-to-cache.sh;
   };
 
   outputs = {
@@ -57,7 +58,15 @@ rec {
             # post-build-hook = "/etc/nix/upload-to-cache.sh";
           };
           environment.etc."nix/upload-to-cache.sh" = {
-            text = "";
+            mode = "555";
+            text = ''
+              #!/bin/sh
+              set -eu
+              set -f # disable globbing
+              export IFS=' '
+              echo "Uploading paths" $OUT_PATHS
+              exec nix copy --to s3://${nixpkgs.lib.lists.last nixConfig.extra-substituters} $OUT_PATHS
+            '';
           };
 
           systemd.services.test-nvme1n1 = {
