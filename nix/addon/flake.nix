@@ -1,4 +1,4 @@
-{
+rec {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     home-manager.url = "github:nix-community/home-manager/release-24.05";
@@ -12,6 +12,20 @@
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
+    ];
+    secret-key-files = /etc/nix/key.private;
+    # @TODO
+    # post-build-hook = /etc/nix/upload-to-cache.sh;
   };
 
   outputs = {
@@ -35,16 +49,48 @@
         {
           ec2.efi = true;
           system.stateVersion = "24.05";
+          nix.settings = {
+            experimental-features = ["nix-command" "flakes"];
+            substituters = nixConfig.extra-substituters;
+            trusted-public-keys = nixConfig.extra-trusted-public-keys;
+            secret-key-files = "/etc/nix/key.private";
+            # post-build-hook = "/etc/nix/upload-to-cache.sh";
+          };
+          environment.etc."nix/upload-to-cache.sh" = {
+            text = "";
+          };
+
+          systemd.services.test-nvme1n1 = {
+            unitConfig.ConditionPathExists = "/dev/nvme1n1";
+            script = ''
+              lsblk -N /dev/nvme1n1 | grep 'Amazon EC2 NVMe Instance Storage'
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = "yes";
+            };
+          };
+          fileSystems."/media" = {
+            device = "/dev/nvme1n1";
+            fsType = "ext4";
+            autoFormat = true;
+            options = [
+              "x-systemd.requires=test-nvme1n1.service"
+              "noauto"
+            ];
+          };
           swapDevices = [
             {
-              device = "/var/lib/swapfile";
+              device = "/media/swapfile";
               size = 6 * 1024; # MB
+              options = [
+                "x-systemd.after=media.mount"
+                "noauto"
+                "nofail"
+              ];
             }
           ];
-          nix.settings.experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
+
           virtualisation = {
             podman.enable = true;
             podman.dockerCompat = true;
@@ -102,6 +148,8 @@
 
         (
           {pkgs, ...}: {
+            systemd.services.test-nvme1n1.path = [pkgs.util-linux pkgs.gnugrep];
+
             programs.fish.enable = true;
             environment.systemPackages = with pkgs; [
               buildkit

@@ -11,7 +11,10 @@
   }: {
     nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
-      modules = ["${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"];
+      modules = [
+        "${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"
+        home-manager.nixosModules.home-manager
+      ];
     };
   };
 }
