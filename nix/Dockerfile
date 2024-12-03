@@ -1,6 +1,6 @@
-FROM nixos/nix
+FROM nixos/nix:2.25.2
 
-RUN nix-env -i fish nixos-rebuild \
+RUN nix-env -i fish nixos-rebuild jq awscli2 \
 	&& mkdir /mnt
 WORKDIR /mnt
 

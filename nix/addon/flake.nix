@@ -17,7 +17,8 @@ rec {
   nixConfig = {
     extra-substituters = [
       "https://nix-community.cachix.org"
-      "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
+      "s3://vscodeec2stack-nixcachebucket0b0ca413-ym0o7vipjfti?region=ap-northeast-1"
+      # "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
@@ -88,17 +89,31 @@ rec {
               "noauto"
             ];
           };
+          fileSystems."/var/lib/bind" = {
+            device = "/var/lib";
+            fsType = "none";
+            options = [
+              "bind"
+              "x-systemd.requires=test-nvme1n1.service"
+              "noauo"
+            ];
+          };
           swapDevices = [
             {
               device = "/media/swapfile";
               size = 6 * 1024; # MB
-              options = [
-                "x-systemd.after=media.mount"
-                "noauto"
-                "nofail"
-              ];
+              options = ["nofail" "noauto"];
+            }
+            {
+              device = "/var/lib/bind/swapfile";
+              size = 2 * 1024; # MB
+              options = ["nofail" "noauto"];
             }
           ];
+          systemd.targets.enable-media-swap = {
+            wantedBy = ["multi-user.target"];
+            wants = ["media-swapfile.swap" "var-lib-bind-swapfile.swap"];
+          };
 
           virtualisation = {
             podman.enable = true;
