@@ -17,8 +17,8 @@ rec {
   nixConfig = {
     extra-substituters = [
       "https://nix-community.cachix.org"
-      "s3://vscodeec2stack-nixcachebucket0b0ca413-ym0o7vipjfti?region=ap-northeast-1"
-      # "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
+      # "s3://vscodeec2stack-nixcachebucket0b0ca413-ym0o7vipjfti?region=ap-northeast-1"
+      "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
@@ -56,7 +56,7 @@ rec {
             substituters = nixConfig.extra-substituters;
             trusted-public-keys = nixConfig.extra-trusted-public-keys;
             secret-key-files = "/etc/nix/key.private";
-            # post-build-hook = "/etc/nix/upload-to-cache.sh";
+            post-build-hook = "/etc/nix/upload-to-cache.sh";
           };
           environment.etc."nix/upload-to-cache.sh" = {
             mode = "555";
@@ -66,10 +66,11 @@ rec {
               set -f # disable globbing
               export IFS=' '
               echo "Uploading paths" $OUT_PATHS
-              exec nix copy --to s3://${nixpkgs.lib.lists.last nixConfig.extra-substituters} $OUT_PATHS
+              exec nix copy --to ${nixpkgs.lib.lists.last nixConfig.extra-substituters} $OUT_PATHS
             '';
           };
 
+          systemd.targets.test-nvme1n1-negated.enable = false;
           systemd.services.test-nvme1n1 = {
             unitConfig.ConditionPathExists = "/dev/nvme1n1";
             script = ''
@@ -79,6 +80,7 @@ rec {
               Type = "oneshot";
               RemainAfterExit = "yes";
             };
+            onFailure = ["test-nvme1n1-negated.target"];
           };
           fileSystems."/media" = {
             device = "/dev/nvme1n1";
@@ -94,7 +96,7 @@ rec {
             fsType = "none";
             options = [
               "bind"
-              "x-systemd.requires=test-nvme1n1.service"
+              "x-systemd.requires=test-nvme1n1-negated.target"
               "noauo"
             ];
           };
@@ -299,6 +301,7 @@ rec {
             environment.systemPackages = [ec2-instance-connect];
             environment.etc.eic_run_authorized_keys = {
               mode = "0755";
+              # @TODO Check if the hash of ssh key from metadata matches the ssh key from argument. If match, do not call eic_curl_authorized_keys
               text = ''
                 #!${pkgs.bash}/bin/sh
                 curl -H "X-aws-ec2-metadata-token: $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
