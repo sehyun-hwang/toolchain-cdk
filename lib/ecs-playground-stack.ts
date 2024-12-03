@@ -1,15 +1,20 @@
-/* eslint-disable no-new, max-classes-per-file */
+/* eslint-disable max-classes-per-file */
 
 import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { AutoScalingGroup, GroupMetrics, Monitoring } from 'aws-cdk-lib/aws-autoscaling';
+import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import {
+  type IPrefixList,
   type IVpc,
   InstanceArchitecture,
   InstanceClass,
   InstanceSize,
   InstanceType,
+  Peer,
   Port,
+  PrefixList,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
 import { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
@@ -18,6 +23,48 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
+
+export interface AwsManagedPrefixListProps {
+  /**
+   * Name of the aws managed prefix list.
+   * See: https://docs.aws.amazon.com/vpc/latest/userguide/working-with-aws-managed-prefix-lists.html#available-aws-managed-prefix-lists
+   * eg. com.amazonaws.global.cloudfront.origin-facing
+   */
+  readonly name: string;
+}
+
+export class AwsManagedPrefixList extends Construct {
+  public readonly prefixList: IPrefixList;
+
+  constructor(scope: Construct, id: string, { name }: AwsManagedPrefixListProps) {
+    super(scope, id);
+
+    const prefixListId = new AwsCustomResource(this, 'GetPrefixListId', {
+      onUpdate: {
+        service: '@aws-sdk/client-ec2',
+        action: 'DescribeManagedPrefixListsCommand',
+        parameters: {
+          Filters: [
+            {
+              Name: 'prefix-list-name',
+              Values: [name],
+            },
+          ],
+        },
+        physicalResourceId: PhysicalResourceId.of(`${id}-${this.node.addr.slice(0, 16)}`),
+      },
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ['ec2:DescribeManagedPrefixLists'],
+          resources: ['*'],
+        }),
+      ]),
+    }).getResponseField('PrefixLists.0.PrefixListId');
+
+    this.prefixList = PrefixList.fromPrefixListId(this, 'PrefixList', prefixListId);
+  }
+}
 
 class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase {}
 
@@ -144,6 +191,13 @@ export default class HelloEcsStack extends cdk.Stack {
     loadBalancedService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '0');
 
     // Security
+    const { prefixList: { prefixListId: ec2InstanceConnectPrefixId } } = new AwsManagedPrefixList(this, 'Ec2IntanceConnectPrefixList', {
+      name: `com.amazonaws.${this.region}.ec2-instance-connect`,
+    });
+    autoScalingGroup.connections.allowFrom(
+      Peer.prefixList(ec2InstanceConnectPrefixId),
+      Port.tcp(22),
+    );
     autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
     loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
   }

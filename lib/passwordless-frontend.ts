@@ -13,7 +13,8 @@ interface PasswordlessFrontendStackProps extends cdk.StackProps {
   passwordlessFrontendDistFolderPath: string;
 }
 
-const DOCKER_EXECUTABLE = process.env.CDK_DOCKER ?? 'docker';
+// eslint-disable-next-line dot-notation
+const DOCKER_EXECUTABLE = process.env['CDK_DOCKER'] ?? 'docker';
 const CONTAINER_NAME = 'cdk-passwordless-frontend';
 
 export default class PasswordlessFrontendStack extends cdk.Stack {
@@ -95,7 +96,7 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
     });
     console.log('Frontend asset path', asset.assetPath);
 
-    const bucketDeployment = new BucketDeployment(this, 'BucketDeployment', {
+    new BucketDeployment(this, 'BucketDeployment', {
       sources: [Source.bucket(asset.bucket, asset.s3ObjectKey)],
       destinationBucket,
       distribution,

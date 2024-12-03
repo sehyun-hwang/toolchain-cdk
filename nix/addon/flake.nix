@@ -1,6 +1,6 @@
-{
+rec {
   inputs = {
-    nixpkgs.url = "github:06kellyjac/nixpkgs/nerdctl";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     home-manager.url = "github:nix-community/home-manager/release-24.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -11,7 +11,20 @@
     vscode-cli-json-path.flake = false;
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
-    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      # "s3://vscodeec2stack-nixcachebucket0b0ca413-ym0o7vipjfti?region=ap-northeast-1"
+      "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
+    ];
+    secret-key-files = "/etc/nix/key.private";
+    post-build-hook = /etc/nix/upload-to-cache.sh;
   };
 
   outputs = {
@@ -34,16 +47,73 @@
 
         {
           ec2.efi = true;
+          system.stateVersion = "24.05";
+          nix.settings = {
+            experimental-features = ["nix-command" "flakes"];
+            substituters = nixConfig.extra-substituters;
+            trusted-public-keys = nixConfig.extra-trusted-public-keys;
+            secret-key-files = "/etc/nix/key.private";
+            post-build-hook = "/etc/nix/upload-to-cache.sh";
+          };
+          environment.etc."nix/upload-to-cache.sh" = {
+            mode = "555";
+            text = ''
+              #!/bin/sh
+              set -eu
+              set -f # disable globbing
+              export IFS=' '
+              echo "Uploading paths" $OUT_PATHS
+              exec nix copy --to ${nixpkgs.lib.lists.last nixConfig.extra-substituters} $OUT_PATHS
+            '';
+          };
+
+          systemd.targets.test-nvme1n1-negated.enable = false;
+          systemd.services.test-nvme1n1 = {
+            unitConfig.ConditionPathExists = "/dev/nvme1n1";
+            script = ''
+              lsblk -N /dev/nvme1n1 | grep 'Amazon EC2 NVMe Instance Storage'
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = "yes";
+            };
+            onFailure = ["test-nvme1n1-negated.target"];
+          };
+          fileSystems."/media" = {
+            device = "/dev/nvme1n1";
+            fsType = "ext4";
+            autoFormat = true;
+            options = [
+              "x-systemd.requires=test-nvme1n1.service"
+              "noauto"
+            ];
+          };
+          fileSystems."/var/lib/bind" = {
+            device = "/var/lib";
+            fsType = "none";
+            options = [
+              "bind"
+              "x-systemd.requires=test-nvme1n1-negated.target"
+              "noauo"
+            ];
+          };
           swapDevices = [
             {
-              device = "/var/lib/swapfile";
+              device = "/media/swapfile";
               size = 6 * 1024; # MB
+              options = ["nofail" "noauto"];
+            }
+            {
+              device = "/var/lib/bind/swapfile";
+              size = 2 * 1024; # MB
+              options = ["nofail" "noauto"];
             }
           ];
-          nix.settings.experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
+          systemd.targets.enable-media-swap = {
+            wantedBy = ["multi-user.target"];
+            wants = ["media-swapfile.swap" "var-lib-bind-swapfile.swap"];
+          };
+
           virtualisation = {
             podman.enable = true;
             podman.dockerCompat = true;
@@ -101,14 +171,17 @@
 
         (
           {pkgs, ...}: {
+            systemd.services.test-nvme1n1.path = [pkgs.util-linux pkgs.gnugrep];
+
             programs.fish.enable = true;
             environment.systemPackages = with pkgs; [
               buildkit
+              iotop
               nerdctl
               rootlesskit
+              runc
               slirp4netns
               wget
-              runc
             ];
             users.users.ec2-user = {
               shell = pkgs.fish;
@@ -225,6 +298,7 @@
             environment.systemPackages = [ec2-instance-connect];
             environment.etc.eic_run_authorized_keys = {
               mode = "0755";
+              # @TODO Check if the hash of ssh key from metadata matches the ssh key from argument. If match, do not call eic_curl_authorized_keys
               text = ''
                 #!${pkgs.bash}/bin/sh
                 curl -H "X-aws-ec2-metadata-token: $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
@@ -241,7 +315,8 @@
             # services.openssh.settings.LogLevel = "DEBUG3";
 
             fileSystems."/mnt" = {
-              device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
+              # device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
+              device = "172.31.33.129:/";
               fsType = "nfs";
               # https://docs.aws.amazon.com/efs/latest/ug/mounting-fs-mount-cmd-dns-name.html
               options = [
@@ -317,16 +392,31 @@
             home.stateVersion = "24.05";
             home.packages = with pkgs;
               [
+                alejandra
+                black
                 corepack_22
                 gnumake
+                hadolint
+                markdownlint-cli2
+                nil
                 nodejs_22
+                oxlint
+                ruff
+                shfmt
+                stylelint
+                typos
+                typos-lsp
 
                 vscode-cli
                 containerd-rootless-setuptool
               ]
               ++ (with pkgs.nodePackages; [
                 eslint
+                prettier
               ]);
+            home.sessionVariables = {
+              CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+            };
 
             services.vscode-server.enable = true;
             services.vscode-server.installPath = "$HOME/.vscode";
@@ -344,6 +434,11 @@
             programs.vim.enable = true;
 
             programs.awscli.settings.default = {
+              region = "ap-northeast-1";
+              credential_source = "Ec2InstanceMetadata";
+              role_arn = "arn:aws:iam::248837585826:role/VsCodeEc2Stack-Us-AdministratorAccessRole1EE9C9E4-11QChk3JOS7W";
+            };
+            programs.awscli.settings.sso = {
               sso_account_id = "248837585826";
               region = "ap-northeast-1";
               sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
@@ -351,8 +446,16 @@
               sso_registration_scopes = "sso:account:access";
               sso_role_name = "AdministratorAccess";
             };
-            programs.git.lfs.enable = true;
-            programs.git.ignores = ["DS_Store"];
+            programs.fish.interactiveShellInit = ''
+              complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+            '';
+            programs.git = {
+              userName = "Sehyun Hwang";
+              userEmail = "hwanghyun3@gmail.com";
+              lfs.enable = true;
+              ignores = ["DS_Store"];
+            };
+
             programs.nix-index.enableFishIntegration = true;
             programs.vim.defaultEditor = true;
             programs.vim.settings = {

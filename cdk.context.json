@@ -81,5 +81,38 @@
       }
     ]
   },
-  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.05.6632.*:filters.state.0=available:owners.0=427812963091:region=ap-northeast-1": "ami-098e6672d303a9992"
+  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.05.6632.*:filters.state.0=available:owners.0=427812963091:region=ap-northeast-1": "ami-098e6672d303a9992",
+  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.05.6632.*:filters.state.0=available:owners.0=427812963091:region=us-west-2": "ami-0c20672f0c3c18f7e",
+  "vpc-provider:account=248837585826:filter.vpc-id=vpc-0ae899f9b16f02f06:region=us-west-2:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-0ae899f9b16f02f06",
+    "vpcCidrBlock": "10.0.0.0/16",
+    "ownerAccountId": "248837585826",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Public",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-049d5efd8d94c6c32",
+            "cidr": "10.0.0.0/20",
+            "availabilityZone": "us-west-2a",
+            "routeTableId": "rtb-09722f7d7b13e8988"
+          }
+        ]
+      },
+      {
+        "name": "Isolated",
+        "type": "Isolated",
+        "subnets": [
+          {
+            "subnetId": "subnet-008d663585350aedc",
+            "cidr": "10.0.128.0/20",
+            "availabilityZone": "us-west-2a",
+            "routeTableId": "rtb-0f40d71f2e38487cd"
+          }
+        ]
+      }
+    ]
+  }
 }

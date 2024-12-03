@@ -11,13 +11,13 @@ import {
 import {
   ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, ScratchSpace, type Volume,
 } from 'aws-cdk-lib/aws-ecs';
+import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
 import { DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import type { IVpc } from 'aws-cdk-lib/aws-ec2';
-import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 interface BastionStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -41,6 +41,11 @@ export default class BastionStack extends cdk.Stack {
         cpuArchitecture: CpuArchitecture.ARM64,
       },
     });
+    const arnComponents: cdk.ArnComponents = {
+      service: 'ec2',
+      resource: 'instance',
+      resourceName: '*',
+    };
     const policy = new Policy(this, 'EC2SshPolicy', {
       statements: [
         new PolicyStatement({
@@ -51,17 +56,19 @@ export default class BastionStack extends cdk.Stack {
           resources: ['*'],
           conditions: {
             StringEquals: {
-              'ec2:Region': this.region,
+              'ec2:Region': [this.region, 'us-west-2'],
             },
           },
         }),
         new PolicyStatement({
           actions: ['ec2-instance-connect:SendSSHPublicKey'],
-          resources: [cdk.Arn.format({
-            service: 'ec2',
-            resource: 'instance',
-            resourceName: '*',
-          }, this)],
+          resources: [
+            cdk.Arn.format(arnComponents, this),
+            cdk.Arn.format({
+              ...arnComponents,
+              region: 'us-west-2',
+            }, this),
+          ],
         }),
       ],
     });
@@ -99,6 +106,7 @@ export default class BastionStack extends cdk.Stack {
       logging: logDriver,
     })
       .addScratch(scratchSpace);
+    // @ts-expect-error Private property
     (taskDefinition.volumes as Volume[]).pop();
 
     // Service
@@ -114,9 +122,13 @@ export default class BastionStack extends cdk.Stack {
       desiredCount: 1,
     });
 
+    const { securityGroupId } = loadBalancerServiceBase.loadBalancer.connections
+      .securityGroups.at(0) || {};
+    if (!securityGroupId)
+      throw new Error('loadBalancerServiceBase.loadBalancer has no security group');
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {
       listenerArn: loadBalancerServiceBase.listener.listenerArn,
-      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', loadBalancerServiceBase.loadBalancer.connections.securityGroups[0].securityGroupId),
+      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', securityGroupId),
     });
 
     const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {

@@ -9,8 +9,10 @@ import VsCodeEc2Stack from '../lib/vscode';
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
 
 const env = {
-  account: process.env.CDK_DEFAULT_ACCOUNT || '',
-  region: process.env.CDK_DEFAULT_REGION || '',
+  // eslint-disable-next-line dot-notation
+  account: process.env['CDK_DEFAULT_ACCOUNT'] || '',
+  // eslint-disable-next-line dot-notation
+  region: process.env['CDK_DEFAULT_REGION'] || '',
 };
 
 const app = new cdk.App();
@@ -22,6 +24,15 @@ const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygro
 new VsCodeEc2Stack(app, 'VsCodeEc2Stack', {
   env,
   vpc,
+  efsSecurityGroupId: 'sg-042fdc617ba6bff47',
+});
+
+new VsCodeEc2Stack(app, 'VsCodeEc2Stack-Us', {
+  env: {
+    account: env.account,
+    region: 'us-west-2',
+  },
+  efsSecurityGroupId: 'sg-00b197c59a79424c6',
 });
 
 const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
