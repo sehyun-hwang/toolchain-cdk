@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ManagedPolicy, PolicyStatement, StarPrincipal } from 'aws-cdk-lib/aws-iam';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 interface VsCodeEc2StackProps extends cdk.StackProps {
   vpc?: ec2.IVpc;
@@ -55,7 +56,11 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       instanceType: new ec2.InstanceType(
         cdk.Fn.conditionIf(
           isUsRegionCondition.logicalId,
-          'm8g.' + ec2.InstanceSize.MEDIUM,
+          ec2.InstanceType.of(
+            ec2.InstanceClass.COMPUTE7_GRAVITON3_NVME_DRIVE,
+            ec2.InstanceSize.MEDIUM,
+          ).toString(),
+          // 'm8g.' + ec2.InstanceSize.MEDIUM,
           ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL).toString(),
         ) as unknown as string,
       ),
@@ -68,12 +73,9 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       }),
       blockDevices: [{
         deviceName: '/dev/xvda',
-        volume: ec2.BlockDeviceVolume.ebs(32, {
-          encrypted: true,
-        }),
+        volume: ec2.BlockDeviceVolume.ebs(32),
       }],
       keyPair: ec2.KeyPair.fromKeyPairName(this, 'KeyPair', `aws-${this.account}-${this.region}`),
-      hibernationEnabled: true,
       allowAllIpv6Outbound: true,
       vpcSubnets: {
         subnetType: ec2.SubnetType.PUBLIC,
@@ -88,5 +90,9 @@ export default class VsCodeEc2Stack extends cdk.Stack {
     instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH IP v4');
     instance.connections.allowFrom(ec2.Peer.anyIpv6(), ec2.Port.tcp(22), 'SSH IP v6');
     instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+
+    StringParameter.prototype.grantRead.call({
+      parameterArn: 'arn:aws:ssm:ap-northeast-1:248837585826:parameter/nix/cache/private-key',
+    }, instance);
   }
 }
