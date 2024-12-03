@@ -1,6 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { ManagedPolicy, PolicyStatement, StarPrincipal } from 'aws-cdk-lib/aws-iam';
+import {
+  ArnPrincipal, ManagedPolicy, PolicyStatement, Role, StarPrincipal,
+} from 'aws-cdk-lib/aws-iam';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
@@ -89,10 +91,15 @@ export default class VsCodeEc2Stack extends cdk.Stack {
     instance.addSecurityGroup(efsSecurityGroup);
     instance.connections.allowFromAnyIpv4(ec2.Port.tcp(22), 'SSH IP v4');
     instance.connections.allowFrom(ec2.Peer.anyIpv6(), ec2.Port.tcp(22), 'SSH IP v6');
-    instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
 
+    instance.role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
     StringParameter.prototype.grantRead.call({
       parameterArn: 'arn:aws:ssm:ap-northeast-1:248837585826:parameter/nix/cache/private-key',
     }, instance);
+    const adminRole = new Role(this, 'AdministratorAccessRole', {
+      assumedBy: new ArnPrincipal(instance.role.roleArn),
+      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
+    });
+    adminRole.grantPassRole(instance.role);
   }
 }

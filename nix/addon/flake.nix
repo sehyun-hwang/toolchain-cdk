@@ -11,7 +11,6 @@ rec {
     vscode-cli-json-path.flake = false;
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
-    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   nixConfig = {
@@ -25,8 +24,6 @@ rec {
       "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
     ];
     secret-key-files = "/etc/nix/key.private";
-    # post-build-hook = "echo";
-    # @TODO Needs testing
     post-build-hook = /etc/nix/upload-to-cache.sh;
   };
 
@@ -401,6 +398,7 @@ rec {
                 gnumake
                 hadolint
                 markdownlint-cli2
+                nil
                 nodejs_22
                 oxlint
                 ruff
@@ -416,6 +414,9 @@ rec {
                 eslint
                 prettier
               ]);
+            home.sessionVariables = {
+              CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+            };
 
             services.vscode-server.enable = true;
             services.vscode-server.installPath = "$HOME/.vscode";
@@ -433,6 +434,11 @@ rec {
             programs.vim.enable = true;
 
             programs.awscli.settings.default = {
+              region = "ap-northeast-1";
+              credential_source = "Ec2InstanceMetadata";
+              role_arn = "arn:aws:iam::248837585826:role/VsCodeEc2Stack-Us-AdministratorAccessRole1EE9C9E4-11QChk3JOS7W";
+            };
+            programs.awscli.settings.sso = {
               sso_account_id = "248837585826";
               region = "ap-northeast-1";
               sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
@@ -440,6 +446,9 @@ rec {
               sso_registration_scopes = "sso:account:access";
               sso_role_name = "AdministratorAccess";
             };
+            programs.fish.interactiveShellInit = ''
+              complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+            '';
             programs.git = {
               userName = "Sehyun Hwang";
               userEmail = "hwanghyun3@gmail.com";

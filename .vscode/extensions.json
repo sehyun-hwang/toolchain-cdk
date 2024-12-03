@@ -1,8 +1,6 @@
 {
     "recommendations": [
         "ahmadalli.vscode-nginx-conf",
-        "bbenoist.Nix",
-        "bbenoist.Nix",
         "bmalehorn.vscode-fish",
         "charliermarsh.ruff",
         "davidanson.vscode-markdownlint",
@@ -13,7 +11,7 @@
         "foxundermoon.shell-format",
         "github.vscode-github-actions",
         "github.vscode-pull-request-github",
-        "kamadorueda.alejandra",
+        "jnoortheen.nix-ide",
         "ms-azuretools.vscode-docker",
         "ms-python.black-formatter",
         "ms-python.python",

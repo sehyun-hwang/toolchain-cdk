@@ -77,9 +77,7 @@
     },
     "nix-index-database": {
       "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs"
       },
       "locked": {
         "lastModified": 1732519917,
@@ -97,6 +95,22 @@
     },
     "nixpkgs": {
       "locked": {
+        "lastModified": 1733015953,
+        "narHash": "sha256-t4BBVpwG9B4hLgc6GUBuj3cjU7lP/PJfpTHuSqE+crk=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "ac35b104800bff9028425fec3b6e8a41de2bbfff",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
         "lastModified": 1732749044,
         "narHash": "sha256-T38FQOg0BV5M8FN1712fovzNakSOENEYs+CSkg31C9Y=",
         "owner": "NixOS",
@@ -111,7 +125,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1682134069,
         "narHash": "sha256-TnI/ZXSmRxQDt2sjRYK/8j8iha4B4zP2cnQCZZ3vp7k=",
@@ -130,7 +144,7 @@
         "home-manager": "home-manager",
         "my-new": "my-new",
         "nix-index-database": "nix-index-database",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "vscode-cli-json-path": "vscode-cli-json-path",
         "vscode-server": "vscode-server"
       }
@@ -168,7 +182,7 @@
     "vscode-cli-json-path": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-oiHfq171Jgi59wcxGfEdwqTPzJ7+lA6vqXQS9hm/nFE=",
+        "narHash": "sha256-/tQPKp71w0zUHB3apJNJ8H9z5EKEmUQC7b8G2MmJNiA=",
         "type": "file",
         "url": "https://code.visualstudio.com/sha"
       },
@@ -180,7 +194,7 @@
     "vscode-server": {
       "inputs": {
         "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1729422940,
