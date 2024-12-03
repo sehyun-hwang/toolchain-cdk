@@ -1,0 +1,27 @@
+{
+    "recommendations": [
+        "ahmadalli.vscode-nginx-conf",
+        "bbenoist.Nix",
+        "bbenoist.Nix",
+        "bmalehorn.vscode-fish",
+        "charliermarsh.ruff",
+        "davidanson.vscode-markdownlint",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "esbenp.prettier-vscode",
+        "exiasr.hadolint",
+        "foxundermoon.shell-format",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "kamadorueda.alejandra",
+        "ms-azuretools.vscode-docker",
+        "ms-python.black-formatter",
+        "ms-python.python",
+        "ms-vscode.makefile-tools",
+        "raynigon.nginx-formatter",
+        "redhat.vscode-yaml",
+        "stylelint.vscode-stylelint",
+        "tekumara.typos-vscode",
+        "usernamehw.errorlens",
+    ]
+}

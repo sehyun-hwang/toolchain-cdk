@@ -69,7 +69,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
         preventUserExistenceErrors: false,
         generateSecret: true,
       },
-      // while testing/experimenting it's heplful to see e.g. full request details in logs:
+      // while testing/experimenting it's helpful to see e.g. full request details in logs:
       logLevel: 'DEBUG',
       functionProps: {
         createAuthChallenge: { environment: sesEnvironment },

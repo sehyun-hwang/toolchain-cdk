@@ -9,8 +9,10 @@ import VsCodeEc2Stack from '../lib/vscode';
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
 
 const env = {
-  account: process.env.CDK_DEFAULT_ACCOUNT || '',
-  region: process.env.CDK_DEFAULT_REGION || '',
+  // eslint-disable-next-line dot-notation
+  account: process.env['CDK_DEFAULT_ACCOUNT'] || '',
+  // eslint-disable-next-line dot-notation
+  region: process.env['CDK_DEFAULT_REGION'] || '',
 };
 
 const app = new cdk.App();

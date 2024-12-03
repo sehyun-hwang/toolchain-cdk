@@ -106,6 +106,7 @@ export default class BastionStack extends cdk.Stack {
       logging: logDriver,
     })
       .addScratch(scratchSpace);
+    // @ts-expect-error Private property
     (taskDefinition.volumes as Volume[]).pop();
 
     // Service
@@ -121,9 +122,13 @@ export default class BastionStack extends cdk.Stack {
       desiredCount: 1,
     });
 
+    const { securityGroupId } = loadBalancerServiceBase.loadBalancer.connections
+      .securityGroups.at(0) || {};
+    if (!securityGroupId)
+      throw new Error('loadBalancerServiceBase.loadBalancer has no security group');
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {
       listenerArn: loadBalancerServiceBase.listener.listenerArn,
-      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', loadBalancerServiceBase.loadBalancer.connections.securityGroups[0].securityGroupId),
+      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', securityGroupId),
     });
 
     const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {
