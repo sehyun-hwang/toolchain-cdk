@@ -66,7 +66,7 @@ export class AwsManagedPrefixList extends Construct {
   }
 }
 
-class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase {}
+class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase { }
 
 /**
  * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
@@ -101,6 +101,10 @@ export default class HelloEcsStack extends cdk.Stack {
       groupMetrics: [GroupMetrics.all()],
       instanceMonitoring: Monitoring.BASIC,
     });
+    autoScalingGroup.addUserData(`[settings.bootstrap-containers.bear]
+source = "public.ecr.aws/bottlerocket/bottlerocket-bootstrap:v0.1.0"
+mode = "once"
+user-data = ""`);
 
     const capacityProviderName = 'prefix-' + cdk.Names.nodeUniqueId(new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
       value: '',
@@ -191,7 +195,7 @@ export default class HelloEcsStack extends cdk.Stack {
     loadBalancedService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '0');
 
     // Security
-    const { prefixList: { prefixListId: ec2InstanceConnectPrefixId } } = new AwsManagedPrefixList(this, 'Ec2IntanceConnectPrefixList', {
+    const { prefixList: { prefixListId: ec2InstanceConnectPrefixId } } = new AwsManagedPrefixList(this, 'Ec2InstanceConnectPrefixList', {
       name: `com.amazonaws.${this.region}.ec2-instance-connect`,
     });
     autoScalingGroup.connections.allowFrom(

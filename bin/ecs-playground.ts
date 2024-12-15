@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 
 import BastionStack from '../lib/bastion';
+import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
@@ -56,4 +57,10 @@ new BastionStack(app, 'BastionStack', {
     API_GATEWAY_AUTH_URL: verifyApiUrl,
     ALLOWED_ORIGIN: 'https://' + distributionDomainName,
   },
+});
+
+new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
+  env,
+  vpc,
+  loadBalancerServiceBase,
 });
