@@ -176,6 +176,8 @@ rec {
             programs.fish.enable = true;
             environment.systemPackages = with pkgs; [
               buildkit
+              docker-buildx
+              file
               iotop
               nerdctl
               rootlesskit
@@ -185,6 +187,11 @@ rec {
             ];
             users.users.ec2-user = {
               shell = pkgs.fish;
+            };
+
+            services.cockpit.enable = true;
+            security.pam.services.cockpit = {
+              otpwAuth = true;
             };
           }
         )
@@ -400,6 +407,7 @@ rec {
                 markdownlint-cli2
                 nil
                 nodejs_22
+                otpw
                 oxlint
                 ruff
                 shfmt
@@ -410,12 +418,21 @@ rec {
                 vscode-cli
                 containerd-rootless-setuptool
               ]
+              ++ [
+                (python312.withPackages
+                  (p: [
+                    "aws-shell"
+                  ]))
+              ]
               ++ (with pkgs.nodePackages; [
                 eslint
                 prettier
               ]);
             home.sessionVariables = {
               CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+            };
+            home.file.".otpw" = {
+              source = ./otpw;
             };
 
             services.vscode-server.enable = true;
