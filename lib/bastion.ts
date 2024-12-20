@@ -46,33 +46,28 @@ export default class BastionStack extends cdk.Stack {
       resource: 'instance',
       resourceName: '*',
     };
-    const policy = new Policy(this, 'EC2SshPolicy', {
-      statements: [
-        new PolicyStatement({
-          actions: [
-            'ec2:DescribeInstances',
-            'ec2:DescribeImages',
-          ],
-          resources: ['*'],
-          conditions: {
-            StringEquals: {
-              'ec2:Region': [this.region, 'us-west-2'],
-            },
-          },
-        }),
-        new PolicyStatement({
-          actions: ['ec2-instance-connect:SendSSHPublicKey'],
-          resources: [
-            cdk.Arn.format(arnComponents, this),
-            cdk.Arn.format({
-              ...arnComponents,
-              region: 'us-west-2',
-            }, this),
-          ],
-        }),
+    taskDefinition.addToTaskRolePolicy(new PolicyStatement({
+      actions: [
+        'ec2:DescribeInstances',
+        'ec2:DescribeImages',
       ],
-    });
-    taskDefinition.taskRole.attachInlinePolicy(policy);
+      resources: ['*'],
+      conditions: {
+        StringEquals: {
+          'ec2:Region': [this.region, 'us-west-2'],
+        },
+      },
+    }));
+    taskDefinition.addToTaskRolePolicy(new PolicyStatement({
+      actions: ['ec2-instance-connect:SendSSHPublicKey'],
+      resources: [
+        cdk.Arn.format(arnComponents, this),
+        cdk.Arn.format({
+          ...arnComponents,
+          region: 'us-west-2',
+        }, this),
+      ],
+    }));
 
     // @ts-expect-error protected
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
