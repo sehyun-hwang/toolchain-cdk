@@ -11,6 +11,8 @@ rec {
     vscode-cli-json-path.flake = false;
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
+    copilot-cli-fix.url = "github:meatcoder/nix-copilot-cli/2595f0517c88b1ca68faff2d3132e498e7c8e349";
+    copilot-cli-fix.inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
   };
 
   nixConfig = {
@@ -35,6 +37,7 @@ rec {
     vscode-cli-json-path,
     vscode-server,
     nix-index-database,
+    copilot-cli-fix,
   }: {
     nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
@@ -179,6 +182,7 @@ rec {
               docker-buildx
               file
               iotop
+              jq
               nerdctl
               rootlesskit
               runc
@@ -406,19 +410,22 @@ rec {
                 corepack_22
                 gnumake
                 hadolint
+                hugo
                 markdownlint-cli2
                 nil
                 nodejs_22
                 otpw
                 oxlint
+                postgresql
                 ruff
                 shfmt
                 stylelint
                 typos
                 typos-lsp
 
-                vscode-cli
                 containerd-rootless-setuptool
+                vscode-cli
+                copilot-cli-fix.packages.aarch64-linux.default
               ]
               ++ [
                 (python312.withPackages
