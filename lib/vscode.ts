@@ -68,7 +68,7 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       ),
       machineImage: ec2.MachineImage.lookup({
         owners: [(427812963091).toString()],
-        name: 'nixos/24.05.6632.*',
+        name: 'nixos/24.11.711815.*',
         filters: {
           architecture: ['arm64'],
         },

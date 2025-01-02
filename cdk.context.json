@@ -114,5 +114,8 @@
         ]
       }
     ]
-  }
+  },
+  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.11.711150.*:filters.state.0=available:owners.0=427812963091:region=ap-northeast-1": "ami-0c00b06f5a97dd6ee",
+  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.11.711815.*:filters.state.0=available:owners.0=427812963091:region=ap-northeast-1": "ami-05aa335d7c8e394c3",
+  "ami:account=248837585826:filters.architecture.0=arm64:filters.image-type.0=machine:filters.name.0=nixos/24.11.711815.*:filters.state.0=available:owners.0=427812963091:region=us-west-2": "ami-0cb41b0710a3c519f"
 }
