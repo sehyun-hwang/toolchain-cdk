@@ -1,7 +1,7 @@
 rec {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
-    home-manager.url = "github:nix-community/home-manager/release-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     my-new.url = "path:my-new-project";
@@ -47,7 +47,7 @@ rec {
 
         {
           ec2.efi = true;
-          system.stateVersion = "24.05";
+          system.stateVersion = "24.11";
           nix.settings = {
             experimental-features = ["nix-command" "flakes"];
             substituters = nixConfig.extra-substituters;
@@ -94,7 +94,7 @@ rec {
             options = [
               "bind"
               "x-systemd.requires=test-nvme1n1-negated.target"
-              "noauo"
+              "noauto"
             ];
           };
           swapDevices = [
@@ -183,7 +183,9 @@ rec {
               rootlesskit
               runc
               slirp4netns
+              unzip
               wget
+              zip
             ];
             users.users.ec2-user = {
               shell = pkgs.fish;
@@ -396,7 +398,7 @@ rec {
               '';
             };
           in {
-            home.stateVersion = "24.05";
+            home.stateVersion = "24.11";
             home.packages = with pkgs;
               [
                 alejandra
