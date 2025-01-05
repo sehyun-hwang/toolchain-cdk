@@ -356,6 +356,23 @@ rec {
             lib,
             ...
           }: let
+            nodejs-global-bin = pkgs.buildNpmPackage {
+              pname = "global-bin";
+              version = "1.0.0";
+              src = ./npm-global;
+              npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
+              dontNpmBuild = true;
+              dontNpmPrune = true;
+
+              installPhase = ''
+                mkdir -p $out/bin
+                cp -r * $out/
+                for file in node_modules/.bin/*; do
+                  ln -s $out/node_modules/.bin/$(basename $file) $out/bin/$(basename $file)
+                done
+              '';
+            };
+
             containerd-rootless-setuptool = pkgs.stdenv.mkDerivation {
               pname = "containerd-rootless-setuptool";
               version = pkgs.nerdctl.version;
@@ -403,6 +420,7 @@ rec {
             };
           in {
             home.stateVersion = "24.11";
+
             home.packages = with pkgs;
               [
                 alejandra
@@ -422,6 +440,8 @@ rec {
                 stylelint
                 typos
                 typos-lsp
+                oxlint
+                nodejs-global-bin
 
                 containerd-rootless-setuptool
                 vscode-cli
@@ -434,8 +454,10 @@ rec {
                   ]))
               ]
               ++ (with pkgs.nodePackages; [
-                eslint
                 prettier
+                # @TODO
+                # vite
+                # wscat
               ]);
             home.sessionVariables = {
               CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
