@@ -455,11 +455,13 @@ rec {
               ]
               ++ (with pkgs.nodePackages; [
                 prettier
-                # @TODO
-                # vite
-                # wscat
               ]);
+            home.sessionPath = [
+              "$HOME/.yarn/bin"
+              "$HOME/.local/share/pnpm"
+            ];
             home.sessionVariables = {
+              PNPM_HOME = "$HOME/.local/share/pnpm";
               CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
             };
             home.file.".otpw" = {
