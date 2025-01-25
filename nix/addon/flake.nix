@@ -394,9 +394,9 @@ rec {
             };
 
             vscode-cli-os =
-              if pkgs.stdenv.isLinux
-              then "alpine"
-              else "darwin";
+              if pkgs.stdenv.isDarwin
+              then "darwin"
+              else "alpine";
             vscode-cli-arch =
               if pkgs.stdenv.isAarch64
               then "arm64"
@@ -443,19 +443,19 @@ rec {
                 oxlint
                 postgresql
                 ruff
+                shellcheck
                 shfmt
                 stylelint
                 typos
                 typos-lsp
-                oxlint
-                nodejs-global-bin
 
                 nerdctl-pkgs.nerdctl
                 unstable-pkgs.atuin
 
                 containerd-rootless-setuptool
-                vscode-cli
                 copilot-cli-fix.packages.${system}.default
+                nodejs-global-bin
+                vscode-cli
               ]
               ++ [
                 (python312.withPackages
@@ -472,6 +472,7 @@ rec {
             ];
             home.sessionVariables = {
               CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+              COREPACK_ENABLE_AUTO_PIN = "0";
               DOCKER_HOST = "$XDG_RUNTIME_DIR/podman/podman.sock";
               PNPM_HOME = "$HOME/.local/share/pnpm";
             };
@@ -509,9 +510,24 @@ rec {
               sso_registration_scopes = "sso:account:access";
               sso_role_name = "AdministratorAccess";
             };
-            programs.fish.interactiveShellInit = ''
-              complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
-            '';
+            programs.fish.interactiveShellInit =
+              ''
+                complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+              ''
+              + (
+                if pkgs.stdenv.isDarwin
+                then ''
+                  export ATUIN_SYNC_ADDRESS=http://atuin.orb.local:8888
+                ''
+                else ''
+                  set DOCKER_PS_ATUIN_PORT (docker ps -f name=atuin --format '{{.Ports}}')
+                  if test -z $DOCKER_PS_ATUIN_PORT
+                      echo Atuin sync server is not running
+                  else
+                      export ATUIN_SYNC_ADDRESS=(echo $DOCKER_PS_ATUIN_PORT | sed -n 's=.*:\([0-9]*\)->.*=http://localhost:\1=p')
+                  end
+                ''
+              );
             programs.git = {
               userName = "Sehyun Hwang";
               userEmail = "hwanghyun3@gmail.com";
