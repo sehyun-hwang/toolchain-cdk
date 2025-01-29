@@ -91,31 +91,13 @@ rec {
               "noauto"
             ];
           };
-          fileSystems."/var/lib/bind" = {
-            device = "/var/lib";
-            fsType = "none";
-            options = [
-              "bind"
-              "x-systemd.requires=test-nvme1n1-negated.target"
-              "noauto"
-            ];
-          };
           swapDevices = [
             {
-              device = "/media/swapfile";
-              size = 6 * 1024; # MB
-              options = ["nofail" "noauto"];
-            }
-            {
-              device = "/var/lib/bind/swapfile";
-              size = 2 * 1024; # MB
-              options = ["nofail" "noauto"];
+              device = "/var/lib/swapfile";
+              size = 4 * 1024; # MB
+              options = ["nofail"];
             }
           ];
-          systemd.targets.enable-media-swap = {
-            wantedBy = ["multi-user.target"];
-            wants = ["media-swapfile.swap" "var-lib-bind-swapfile.swap"];
-          };
 
           virtualisation = {
             podman.enable = true;
