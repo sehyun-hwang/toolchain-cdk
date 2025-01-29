@@ -1,16 +1,17 @@
 rec {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
-    my-new.url = "path:my-new-project";
-    my-new.inputs.nixpkgs.follows = "nixpkgs";
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
+    copilot-cli-fix.url = "github:meatcoder/nix-copilot-cli/2595f0517c88b1ca68faff2d3132e498e7c8e349";
+    copilot-cli-fix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   nixConfig = {
@@ -23,20 +24,22 @@ rec {
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
     ];
-    secret-key-files = "/etc/nix/key.private";
+    secret-key-files = /etc/nix/key.private;
     post-build-hook = /etc/nix/upload-to-cache.sh;
   };
 
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-unstable,
+    nixpkgs-nerdctl,
     home-manager,
-    my-new,
     vscode-cli-json-path,
     vscode-server,
     nix-index-database,
+    copilot-cli-fix,
   }: {
-    nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem rec {
       system = "aarch64-linux";
 
       modules = [
@@ -179,6 +182,7 @@ rec {
               docker-buildx
               file
               iotop
+              jq
               nerdctl
               rootlesskit
               runc
@@ -342,6 +346,10 @@ rec {
         )
 
         {
+          home-manager.extraSpecialArgs = {
+            unstable-pkgs = nixpkgs-unstable.legacyPackages.${system};
+            nerdctl-pkgs = nixpkgs-nerdctl.legacyPackages.${system};
+          };
           home-manager.sharedModules = [
             vscode-server.homeModules.default
             nix-index-database.hmModules.nix-index
@@ -349,9 +357,28 @@ rec {
 
           home-manager.users.ec2-user = {
             pkgs,
+            unstable-pkgs,
+            nerdctl-pkgs,
             lib,
             ...
           }: let
+            nodejs-global-bin = pkgs.buildNpmPackage {
+              pname = "global-bin";
+              version = "1.0.0";
+              src = ./npm-global;
+              npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
+              dontNpmBuild = true;
+              dontNpmPrune = true;
+
+              installPhase = ''
+                mkdir -p $out/bin
+                cp -r * $out/
+                for file in node_modules/.bin/*; do
+                  ln -s $out/node_modules/.bin/$(basename $file) $out/bin/$(basename $file)
+                done
+              '';
+            };
+
             containerd-rootless-setuptool = pkgs.stdenv.mkDerivation {
               pname = "containerd-rootless-setuptool";
               version = pkgs.nerdctl.version;
@@ -367,9 +394,9 @@ rec {
             };
 
             vscode-cli-os =
-              if pkgs.stdenv.isLinux
-              then "alpine"
-              else "darwin";
+              if pkgs.stdenv.isDarwin
+              then "darwin"
+              else "alpine";
             vscode-cli-arch =
               if pkgs.stdenv.isAarch64
               then "arm64"
@@ -399,26 +426,36 @@ rec {
             };
           in {
             home.stateVersion = "24.11";
+
             home.packages = with pkgs;
               [
+                act
                 alejandra
                 black
                 corepack_22
                 gnumake
                 hadolint
+                hugo
                 markdownlint-cli2
                 nil
                 nodejs_22
                 otpw
                 oxlint
+                postgresql
                 ruff
+                shellcheck
                 shfmt
                 stylelint
                 typos
                 typos-lsp
 
-                vscode-cli
+                nerdctl-pkgs.nerdctl
+                unstable-pkgs.atuin
+
                 containerd-rootless-setuptool
+                copilot-cli-fix.packages.${system}.default
+                nodejs-global-bin
+                vscode-cli
               ]
               ++ [
                 (python312.withPackages
@@ -427,11 +464,17 @@ rec {
                   ]))
               ]
               ++ (with pkgs.nodePackages; [
-                eslint
                 prettier
               ]);
+            home.sessionPath = [
+              "$HOME/.yarn/bin"
+              "$HOME/.local/share/pnpm"
+            ];
             home.sessionVariables = {
               CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+              COREPACK_ENABLE_AUTO_PIN = "0";
+              DOCKER_HOST = "$XDG_RUNTIME_DIR/podman/podman.sock";
+              PNPM_HOME = "$HOME/.local/share/pnpm";
             };
             home.file.".otpw" = {
               source = ./otpw;
@@ -440,6 +483,7 @@ rec {
             services.vscode-server.enable = true;
             services.vscode-server.installPath = "$HOME/.vscode";
 
+            programs.atuin.enable = true;
             programs.awscli.enable = true;
             programs.bat.enable = true;
             programs.fish.enable = true;
@@ -452,6 +496,7 @@ rec {
             programs.starship.enable = true;
             programs.vim.enable = true;
 
+            programs.atuin.package = unstable-pkgs.atuin;
             programs.awscli.settings.default = {
               region = "ap-northeast-1";
               credential_source = "Ec2InstanceMetadata";
@@ -465,9 +510,24 @@ rec {
               sso_registration_scopes = "sso:account:access";
               sso_role_name = "AdministratorAccess";
             };
-            programs.fish.interactiveShellInit = ''
-              complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
-            '';
+            programs.fish.interactiveShellInit =
+              ''
+                complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+              ''
+              + (
+                if pkgs.stdenv.isDarwin
+                then ''
+                  export ATUIN_SYNC_ADDRESS=http://atuin.orb.local:8888
+                ''
+                else ''
+                  set DOCKER_PS_ATUIN_PORT (docker ps -f name=atuin --format '{{.Ports}}')
+                  if test -z $DOCKER_PS_ATUIN_PORT
+                      echo Atuin sync server is not running
+                  else
+                      export ATUIN_SYNC_ADDRESS=(echo $DOCKER_PS_ATUIN_PORT | sed -n 's=.*:\([0-9]*\)->.*=http://localhost:\1=p')
+                  end
+                ''
+              );
             programs.git = {
               userName = "Sehyun Hwang";
               userEmail = "hwanghyun3@gmail.com";

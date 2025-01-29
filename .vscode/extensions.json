@@ -19,6 +19,7 @@
         "raynigon.nginx-formatter",
         "redhat.vscode-yaml",
         "stylelint.vscode-stylelint",
+        "tamasfe.even-better-toml",
         "tekumara.typos-vscode",
         "usernamehw.errorlens",
     ]
