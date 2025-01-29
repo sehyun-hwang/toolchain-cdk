@@ -479,6 +479,10 @@ rec {
             programs.vim.enable = true;
 
             programs.atuin.package = unstable-pkgs.atuin;
+            programs.atuin.settings = {
+              search_mode = "prefix";
+              inline_height = 5;
+            };
             programs.awscli.settings.default = {
               region = "ap-northeast-1";
               credential_source = "Ec2InstanceMetadata";
