@@ -70,7 +70,6 @@ rec {
             '';
           };
 
-          systemd.targets.test-nvme1n1-negated.enable = false;
           systemd.services.test-nvme1n1 = {
             unitConfig.ConditionPathExists = "/dev/nvme1n1";
             script = ''
@@ -80,16 +79,21 @@ rec {
               Type = "oneshot";
               RemainAfterExit = "yes";
             };
-            onFailure = ["test-nvme1n1-negated.target"];
           };
           fileSystems."/media" = {
-            device = "/dev/nvme1n1";
+            device = "/dev/nvme1n1"; # TODO
             fsType = "ext4";
             autoFormat = true;
             options = [
               "x-systemd.requires=test-nvme1n1.service"
               "noauto"
             ];
+          };
+          fileSystems."/mnt" = {
+            device = "/dev/nvme1n1";
+            fsType = "ext4";
+            autoResize = true;
+            options = ["nofail"];
           };
           swapDevices = [
             {
@@ -309,7 +313,7 @@ rec {
             services.openssh.authorizedKeysCommandUser = "ec2-instance-connect";
             # services.openssh.settings.LogLevel = "DEBUG3";
 
-            fileSystems."/mnt" = {
+            fileSystems."/mnt/efs" = {
               # device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
               device = "172.31.33.129:/";
               fsType = "nfs";
