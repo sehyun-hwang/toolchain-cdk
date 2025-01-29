@@ -1,12 +1,12 @@
-import { createHash } from 'crypto';
 import { spawnSync } from 'child_process';
+import { createHash } from 'crypto';
 import { symlinkSync } from 'fs';
 
-import * as cdk from 'aws-cdk-lib';
-import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
 import { type CfnDistribution, PriceClass, ResponseHeadersPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { Asset } from 'aws-cdk-lib/aws-s3-assets';
-import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 
 interface PasswordlessFrontendStackProps extends cdk.StackProps {
