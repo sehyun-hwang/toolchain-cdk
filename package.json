@@ -12,20 +12,20 @@
     },
     "devDependencies": {
         "@swc-node/register": "^1.10.9",
-        "@tsconfig/node-lts": "^22.0.0",
+        "@tsconfig/node-lts": "^22.0.1",
         "@tsconfig/strictest": "^2.0.5",
-        "@types/jest": "^29.5.13",
-        "@types/node": "22.7.4",
-        "aws-cdk": "2.166.0",
-        "esbuild": "^0.24.0",
-        "globals": "^15.12.0",
-        "typescript": "~5.6.2"
+        "@types/jest": "^29.5.14",
+        "@types/node": "22.12.0",
+        "aws-cdk": "2.177.0",
+        "esbuild": "^0.24.2",
+        "globals": "^15.14.0",
+        "typescript": "~5.7.3"
     },
     "dependencies": {
-        "@aws-sdk/client-ses": "^3.665.0",
-        "@aws-solutions-constructs/aws-cloudfront-s3": "^2.74.0",
-        "amazon-cognito-passwordless-auth": "^0.14.3",
-        "aws-cdk-lib": "2.166.0",
+        "@aws-sdk/client-ses": "^3.734.0",
+        "@aws-solutions-constructs/aws-cloudfront-s3": "^2.76.0",
+        "amazon-cognito-passwordless-auth": "^0.15.0",
+        "aws-cdk-lib": "2.177.0",
         "aws-lambda-reverse-proxy.git": "github:Ircama/aws-lambda-reverse-proxy",
         "constructs": "^10.4.2"
     },
