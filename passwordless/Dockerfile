@@ -4,8 +4,8 @@ WORKDIR /mnt
 COPY --from=ttyd-git html/package.json html/yarn.lock html/.yarnrc.yml ./
 COPY --from=ttyd-git html/.yarn .yarn
 
-RUN corepack enable \
-	&& corepack prepare yarn@stable --activate \
+ENV COREPACK_INTEGRITY_KEYS=0
+RUN corepack enable yarn \
 	&& yarn add serve \
 	&& yarn cache clean
 
@@ -26,6 +26,7 @@ WORKDIR /mnt
 COPY package.json pnpm-lock.yaml ./
 COPY patches patches
 
+ENV COREPACK_INTEGRITY_KEYS=0
 RUN corepack enable pnpm \
 	&& pnpm i --force --frozen-lockfile \
 	&& pnpm store prune
