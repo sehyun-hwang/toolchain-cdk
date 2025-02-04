@@ -1,11 +1,11 @@
-import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import {
   ArnPrincipal, ManagedPolicy, PolicyStatement, Role, StarPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import * as cdk from 'aws-cdk-lib/core';
+import { Construct } from 'constructs';
 
 interface VsCodeEc2StackProps extends cdk.StackProps {
   vpc?: ec2.IVpc;
@@ -59,10 +59,9 @@ export default class VsCodeEc2Stack extends cdk.Stack {
         cdk.Fn.conditionIf(
           isUsRegionCondition.logicalId,
           ec2.InstanceType.of(
-            ec2.InstanceClass.COMPUTE7_GRAVITON3_NVME_DRIVE,
+            ec2.InstanceClass.COMPUTE8_GRAVITON4,
             ec2.InstanceSize.MEDIUM,
           ).toString(),
-          // 'm8g.' + ec2.InstanceSize.MEDIUM,
           ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL).toString(),
         ) as unknown as string,
       ),

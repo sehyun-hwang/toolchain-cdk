@@ -1,4 +1,10 @@
-import * as cdk from 'aws-cdk-lib';
+import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import {
+  ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, ScratchSpace, type Volume,
+} from 'aws-cdk-lib/aws-ecs';
+import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import {
   ApplicationListener,
   ApplicationListenerRule,
@@ -8,16 +14,10 @@ import {
   ListenerCondition,
   type QueryStringCondition,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import {
-  ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, ScratchSpace, type Volume,
-} from 'aws-cdk-lib/aws-ecs';
-import { Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
-import { Construct } from 'constructs';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
-import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
-import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import * as cdk from 'aws-cdk-lib/core';
+import { Construct } from 'constructs';
 
 interface BastionStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -69,7 +69,7 @@ export default class BastionStack extends cdk.Stack {
       ],
     }));
 
-    // @ts-expect-error protected
+    // @ts-expect-error Protected method
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
     const scratchSpace: ScratchSpace = {
       containerPath: '/run/ttyd',

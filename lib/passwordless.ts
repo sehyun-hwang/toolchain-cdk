@@ -1,15 +1,13 @@
-/* eslint-disable max-classes-per-file */
-
+import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
+import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import * as cdk from 'aws-cdk-lib';
-import {
-  type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
-} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import {
   CognitoUserPoolsAuthorizer, MockIntegration, PassthroughBehavior, RequestValidator,
 } from 'aws-cdk-lib/aws-apigateway';
-import type { Config } from 'amazon-cognito-passwordless-auth/config';
+import {
+  type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
+} from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
-import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;

@@ -1,4 +1,4 @@
-FROM node:18-alpine as ttyd-frontend
+FROM node:18-alpine AS ttyd-frontend
 
 WORKDIR /mnt
 COPY --from=ttyd-git html/package.json html/yarn.lock html/.yarnrc.yml ./

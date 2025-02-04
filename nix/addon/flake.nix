@@ -70,7 +70,6 @@ rec {
             '';
           };
 
-          systemd.targets.test-nvme1n1-negated.enable = false;
           systemd.services.test-nvme1n1 = {
             unitConfig.ConditionPathExists = "/dev/nvme1n1";
             script = ''
@@ -80,10 +79,9 @@ rec {
               Type = "oneshot";
               RemainAfterExit = "yes";
             };
-            onFailure = ["test-nvme1n1-negated.target"];
           };
           fileSystems."/media" = {
-            device = "/dev/nvme1n1";
+            device = "/dev/nvme1n1"; # TODO
             fsType = "ext4";
             autoFormat = true;
             options = [
@@ -91,31 +89,19 @@ rec {
               "noauto"
             ];
           };
-          fileSystems."/var/lib/bind" = {
-            device = "/var/lib";
-            fsType = "none";
-            options = [
-              "bind"
-              "x-systemd.requires=test-nvme1n1-negated.target"
-              "noauto"
-            ];
+          fileSystems."/mnt" = {
+            device = "/dev/nvme1n1";
+            fsType = "ext4";
+            autoResize = true;
+            options = ["nofail"];
           };
           swapDevices = [
             {
-              device = "/media/swapfile";
-              size = 6 * 1024; # MB
-              options = ["nofail" "noauto"];
-            }
-            {
-              device = "/var/lib/bind/swapfile";
-              size = 2 * 1024; # MB
-              options = ["nofail" "noauto"];
+              device = "/var/lib/swapfile";
+              size = 4 * 1024; # MB
+              options = ["nofail"];
             }
           ];
-          systemd.targets.enable-media-swap = {
-            wantedBy = ["multi-user.target"];
-            wants = ["media-swapfile.swap" "var-lib-bind-swapfile.swap"];
-          };
 
           virtualisation = {
             podman.enable = true;
@@ -327,7 +313,7 @@ rec {
             services.openssh.authorizedKeysCommandUser = "ec2-instance-connect";
             # services.openssh.settings.LogLevel = "DEBUG3";
 
-            fileSystems."/mnt" = {
+            fileSystems."/mnt/efs" = {
               # device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
               device = "172.31.33.129:/";
               fsType = "nfs";
@@ -497,6 +483,10 @@ rec {
             programs.vim.enable = true;
 
             programs.atuin.package = unstable-pkgs.atuin;
+            programs.atuin.settings = {
+              search_mode = "prefix";
+              inline_height = 5;
+            };
             programs.awscli.settings.default = {
               region = "ap-northeast-1";
               credential_source = "Ec2InstanceMetadata";

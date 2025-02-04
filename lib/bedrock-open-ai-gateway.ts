@@ -1,19 +1,19 @@
-import * as cdk from 'aws-cdk-lib';
+import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { Repository } from 'aws-cdk-lib/aws-ecr';
+import {
+  ContainerImage, Ec2Service, Ec2TaskDefinition,
+} from 'aws-cdk-lib/aws-ecs';
+import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import {
   ApplicationListener,
   ApplicationProtocol,
   ApplicationTargetGroup,
   ListenerCondition,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import {
-  ContainerImage, Ec2Service, Ec2TaskDefinition,
-} from 'aws-cdk-lib/aws-ecs';
-import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
-import { Construct } from 'constructs';
-import type { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { Repository } from 'aws-cdk-lib/aws-ecr';
-import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import * as cdk from 'aws-cdk-lib/core';
+import { Construct } from 'constructs';
 
 interface BedrockOpenAiGatewayStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -49,7 +49,7 @@ export default class BedrockOpenAiGatewayStack extends cdk.Stack {
     }));
 
     const repository = Repository.fromRepositoryArn(this, 'Repository', Repository.arnForLocalRepository('bedrock-proxy-api-ecs', this, '366590864501'));
-    // @ts-expect-error protected
+    // @ts-expect-error Protected method
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
     taskDefinition.addContainer('bedrock-proxy-fastapi', {
       memoryLimitMiB: 128,

@@ -1,28 +1,28 @@
 /* eslint-disable max-classes-per-file */
 
-import * as cdk from 'aws-cdk-lib';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { AutoScalingGroup, GroupMetrics, Monitoring } from 'aws-cdk-lib/aws-autoscaling';
-import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import {
-  type IPrefixList,
-  type IVpc,
   InstanceArchitecture,
   InstanceClass,
   InstanceSize,
   InstanceType,
+  type IPrefixList,
+  type IVpc,
   Peer,
   Port,
   PrefixList,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
-import { Construct } from 'constructs';
-import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { PublicHostedZone } from 'aws-cdk-lib/aws-route53';
+import * as cdk from 'aws-cdk-lib/core';
+import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { Construct } from 'constructs';
 
 export interface AwsManagedPrefixListProps {
   /**
