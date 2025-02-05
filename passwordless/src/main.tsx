@@ -13,7 +13,10 @@ import {
 import App from "./App";
 import { MockPasswordless } from "./local-cognito";
 
-Passwordless.configure(import.meta.env.PASSWORDLESS_CONFIG_JSON);
+// @ts-ignore
+console.log(window.env);
+// @ts-ignore
+Passwordless.configure(window.env.PASSWORDLESS_CONFIG);
 
 render(
   <PasswordlessContextProvider enableLocalUserCache={true}>
