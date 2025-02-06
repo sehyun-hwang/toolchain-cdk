@@ -97,7 +97,10 @@ export default defineConfig(async ({ command, mode }) => {
         },
       }]),
       insertHtml({
-        headPrepend: [h('script', { src: '/assets/env.js' })],
+        headPrepend: [h('script', {
+          src: '/assets/env.js',
+          type: 'module',
+        })],
       }),
     ],
     define,

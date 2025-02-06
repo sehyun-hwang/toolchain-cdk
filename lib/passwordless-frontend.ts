@@ -7,15 +7,18 @@ import { type CfnDistribution, PriceClass, ResponseHeadersPolicy } from 'aws-cdk
 import { Asset } from 'aws-cdk-lib/aws-s3-assets';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import * as cdk from 'aws-cdk-lib/core';
-import { Construct } from 'constructs';
-
-interface PasswordlessFrontendStackProps extends cdk.StackProps {
-  passwordlessFrontendDistFolderPath: string;
-}
+import type { Construct } from 'constructs';
 
 // eslint-disable-next-line dot-notation
 const DOCKER_EXECUTABLE = process.env['CDK_DOCKER'] ?? 'docker';
 const CONTAINER_NAME = 'cdk-passwordless-frontend';
+
+interface PasswordlessFrontendStackProps extends cdk.StackProps {
+  passwordlessFrontendDistFolderPath: string;
+  passwordlessConfigEntries: string[];
+  passwordlessConfigEntriesLength: number;
+  distributionDomainNameImport: string;
+}
 
 export default class PasswordlessFrontendStack extends cdk.Stack {
   distributionDomainName: string;
@@ -57,6 +60,18 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PasswordlessFrontendStackProps) {
     super(scope, id, props);
 
+    const envJson = new cdk.CfnJson(this, 'PasswordlessConfigJson', {
+      value: this.toJsonString({
+        VITE_API_BASE: cdk.Fn.join('', ['https://', props.distributionDomainNameImport]),
+        /** @link https://github.com/aws/aws-cdk/issues/9488 */
+        PASSWORDLESS_CONFIG: Array(props.passwordlessConfigEntriesLength).fill(undefined)
+          .map((_, i) => cdk.Fn.select(i, props.passwordlessConfigEntries)),
+      }),
+    });
+    this.exportValue(envJson.toJSON(), {
+      name: cdk.Names.uniqueId(envJson),
+    });
+
     const cloudfrontToS3 = new CloudFrontToS3(this, 'CloudFrontToS3', {
       cloudFrontDistributionProps: {
         priceClass: PriceClass.PRICE_CLASS_200,
@@ -83,7 +98,6 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
     });
     symlinkSync('/mnt/node_modules', path + '/node_modules');
     symlinkSync('/mnt/ttyd', path + '/ttyd');
-    console.log('Frontend temp dir', path);
 
     const asset = new Asset(this, 'BundledAsset', {
       path,
@@ -93,11 +107,14 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
         outputType: cdk.BundlingOutput.NOT_ARCHIVED,
         user: 'root:root', // For rootless container runtimes
       },
+      exclude: ['env.json'],
     });
-    console.log('Frontend asset path', asset.assetPath);
 
     new BucketDeployment(this, 'BucketDeployment', {
-      sources: [Source.bucket(asset.bucket, asset.s3ObjectKey)],
+      sources: [
+        Source.bucket(asset.bucket, asset.s3ObjectKey),
+        Source.data('env.json', envJson.value.toString()),
+      ],
       destinationBucket,
       distribution,
     });

@@ -1,4 +1,4 @@
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib/core';
 
 import BastionStack from '../lib/bastion';
 import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
@@ -18,7 +18,9 @@ const env = {
 
 const app = new cdk.App();
 
-const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
+const {
+  loadBalancerServiceBase, vpc, distributionDomainNameImport,
+} = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
   env,
 });
 
@@ -36,19 +38,27 @@ new VsCodeEc2Stack(app, 'VsCodeEc2Stack-Us', {
   efsSecurityGroupId: 'sg-00b197c59a79424c6',
 });
 
-const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
-  env,
-  passwordlessFrontendDistFolderPath: PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH,
-});
-
 const { listener } = loadBalancerServiceBase;
-const { verifyApiUrl } = new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
+const passwordlessStack = new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
   env,
   listener,
   botUrl: 'https://eo20dnx5kq1d0eb.m.pipedream.net',
-  distributionDomainName,
+  distributionDomainName: 'dist',
 });
+const {
+  verifyApiUrl, passwordlessConfigEntries, passwordlessConfigEntriesLength,
+} = passwordlessStack;
 
+const passwordlessFrontendStack = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
+  env,
+  passwordlessFrontendDistFolderPath: PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH,
+  distributionDomainNameImport,
+  passwordlessConfigEntries,
+  passwordlessConfigEntriesLength,
+});
+passwordlessFrontendStack.addDependency(passwordlessStack, 'passwordlessConfigEntries');
+
+const { distributionDomainName } = passwordlessFrontendStack;
 new BastionStack(app, 'BastionStack', {
   env,
   vpc,

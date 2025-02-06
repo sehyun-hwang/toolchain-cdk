@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'preact/hooks';
 import { usePasswordless } from 'amazon-cognito-passwordless-auth/react';
+import { useEffect, useState } from 'preact/hooks';
 
-const { VITE_API_BASE, DEV, VITE_INJECTED_USER_ID } = import.meta.env as ImportMetaEnv & {
+// @ts-ignore
+const { VITE_API_BASE } = window.env as {
   VITE_API_BASE: string;
 };
+const { DEV, VITE_INJECTED_USER_ID } = import.meta.env;
 
 // https://gist.github.com/Paradoxis/5f42ac638792a50fee1e82bd36450665#file-http-to-ws-js
 const wsApiBase = VITE_API_BASE.replace(/(http)(s)?:\/\//, 'ws$2://');

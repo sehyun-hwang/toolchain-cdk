@@ -2,7 +2,8 @@ import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import type { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import {
-  ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, ScratchSpace, type Volume,
+  ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, type ScratchSpace,
+  type Volume,
 } from 'aws-cdk-lib/aws-ecs';
 import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import {
@@ -17,7 +18,7 @@ import {
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { DnsRecordType } from 'aws-cdk-lib/aws-servicediscovery';
 import * as cdk from 'aws-cdk-lib/core';
-import { Construct } from 'constructs';
+import type { Construct } from 'constructs';
 
 interface BastionStackProps extends cdk.StackProps {
   vpc: IVpc;
