@@ -9,6 +9,7 @@ import Pino from 'pino';
 import urlResolve from 'rollup-plugin-url-resolve';
 import { type PluginOption, defineConfig, loadEnv } from 'vite';
 import generateFile from 'vite-plugin-generate-file';
+import { insertHtml, h } from 'vite-plugin-insert-html';
 
 let server: Server;
 
@@ -95,6 +96,9 @@ export default defineConfig(async ({ command, mode }) => {
           PASSWORDLESS_CONFIG: passwordlessConfig,
         },
       }]),
+      insertHtml({
+        headPrepend: [h('script', { src: '/assets/env.js' })],
+      }),
     ],
     define,
     build: {
