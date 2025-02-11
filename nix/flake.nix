@@ -162,6 +162,7 @@ rec {
               buildkit
               docker-buildx
               file
+              git
               iotop
               jq
               nerdctl
@@ -332,76 +333,77 @@ rec {
             nix-index-database.hmModules.nix-index
           ];
 
-          home-manager.users.ec2-user = {pkgs, ...}:
-            addon.home-manager-package-options
-            // {
-              home.stateVersion = "24.11";
-              home.sessionPath = [
-                "$HOME/.yarn/bin"
-                "$HOME/.local/share/pnpm"
-              ];
-              home.sessionVariables = {
-                CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
-                COREPACK_ENABLE_AUTO_PIN = "0";
-                DOCKER_HOST = "$XDG_RUNTIME_DIR/podman/podman.sock";
-                PNPM_HOME = "$HOME/.local/share/pnpm";
-              };
-              home.file.".otpw" = {
-                source = ./otpw;
-              };
-
-              services.vscode-server.enable = true;
-              services.vscode-server.installPath = "$HOME/.vscode";
-
-              programs.atuin.settings = {
-                search_mode = "prefix";
-                inline_height = 5;
-              };
-              programs.awscli.settings.default = {
-                region = "ap-northeast-1";
-                credential_source = "Ec2InstanceMetadata";
-                role_arn = "arn:aws:iam::248837585826:role/VsCodeEc2Stack-Us-AdministratorAccessRole1EE9C9E4-11QChk3JOS7W";
-              };
-              programs.awscli.settings.sso = {
-                sso_account_id = "248837585826";
-                region = "ap-northeast-1";
-                sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
-                sso_region = "us-east-1";
-                sso_registration_scopes = "sso:account:access";
-                sso_role_name = "AdministratorAccess";
-              };
-              programs.git = {
-                userName = "Sehyun Hwang";
-                userEmail = "hwanghyun3@gmail.com";
-                lfs.enable = true;
-                ignores = ["DS_Store"];
-              };
-
-              programs.nix-index.enableFishIntegration = true;
-              programs.vim.defaultEditor = true;
-              programs.vim.settings = {
-                number = true;
-              };
-
-              programs.fish.interactiveShellInit =
-                ''
-                  complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
-                ''
-                + (
-                  if pkgs.stdenv.isDarwin
-                  then ''
-                    export ATUIN_SYNC_ADDRESS=http://atuin.orb.local:8888
-                  ''
-                  else ''
-                    set DOCKER_PS_ATUIN_PORT (docker ps -f name=atuin --format '{{.Ports}}')
-                    if test -z $DOCKER_PS_ATUIN_PORT
-                        echo Atuin sync server is not running
-                    else
-                        export ATUIN_SYNC_ADDRESS=(echo $DOCKER_PS_ATUIN_PORT | sed -n 's=.*:\([0-9]*\)->.*=http://localhost:\1=p')
-                    end
-                  ''
-                );
+          home-manager.users.ec2-user = {pkgs, ...}: {
+            imports = [
+              addon.homeManagerModules.default
+            ];
+            home.stateVersion = "24.11";
+            home.sessionPath = [
+              "$HOME/.yarn/bin"
+              "$HOME/.local/share/pnpm"
+            ];
+            home.sessionVariables = {
+              CDK_DOCKER = "/nix/store/7nxcx3ai95xdshnpr5ykpc4xdf9lh7ap-nerdctl-2.0.0/bin/nerdctl";
+              COREPACK_ENABLE_AUTO_PIN = "0";
+              DOCKER_HOST = "$XDG_RUNTIME_DIR/podman/podman.sock";
+              PNPM_HOME = "$HOME/.local/share/pnpm";
             };
+            home.file.".otpw" = {
+              source = ./otpw;
+            };
+
+            services.vscode-server.enable = true;
+            services.vscode-server.installPath = "$HOME/.vscode";
+
+            programs.atuin.settings = {
+              search_mode = "prefix";
+              inline_height = 5;
+            };
+            programs.awscli.settings.default = {
+              region = "ap-northeast-1";
+              credential_source = "Ec2InstanceMetadata";
+              role_arn = "arn:aws:iam::248837585826:role/VsCodeEc2Stack-Us-AdministratorAccessRole1EE9C9E4-11QChk3JOS7W";
+            };
+            programs.awscli.settings.sso = {
+              sso_account_id = "248837585826";
+              region = "ap-northeast-1";
+              sso_start_url = "https://d-90678ca7cb.awsapps.com/start";
+              sso_region = "us-east-1";
+              sso_registration_scopes = "sso:account:access";
+              sso_role_name = "AdministratorAccess";
+            };
+            programs.git = {
+              userName = "Sehyun Hwang";
+              userEmail = "hwanghyun3@gmail.com";
+              lfs.enable = true;
+              ignores = ["DS_Store"];
+            };
+
+            programs.nix-index.enableFishIntegration = true;
+            programs.vim.defaultEditor = true;
+            programs.vim.settings = {
+              number = true;
+            };
+
+            programs.fish.interactiveShellInit =
+              ''
+                complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+              ''
+              + (
+                if pkgs.stdenv.isDarwin
+                then ''
+                  export ATUIN_SYNC_ADDRESS=http://atuin.orb.local:8888
+                ''
+                else ''
+                  set DOCKER_PS_ATUIN_PORT (docker ps -f name=atuin --format '{{.Ports}}')
+                  if test -z $DOCKER_PS_ATUIN_PORT
+                      echo Atuin sync server is not running
+                  else
+                      export ATUIN_SYNC_ADDRESS=(echo $DOCKER_PS_ATUIN_PORT | sed -n 's=.*:\([0-9]*\)->.*=http://localhost:\1=p')
+                  end
+                ''
+              );
+          };
         }
       ];
     };

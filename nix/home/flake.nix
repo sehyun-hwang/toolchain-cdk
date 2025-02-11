@@ -149,7 +149,7 @@
       programs.starship.enable = true;
       programs.vim.enable = true;
     };
-  in
+  in (
     {
       # https://github.com/nix-community/home-manager/blob/ba4a1a110204c27805d1a1b5c8b24b3a0da4d063/templates/standalone/flake.nix
       homeConfigurations."hwanghyun3" = home-manager.lib.homeManagerConfiguration {
@@ -168,7 +168,7 @@
         ];
       };
 
-      home-manager-package-options =
+      homeManagerModules.default = {...}:
         {
           home.stateVersion = "24.11";
           home.packages = packages;
@@ -177,5 +177,6 @@
     }
     // flake-utils.lib.eachDefaultSystem (system: {
       devShells.default = pkgs.mkShell {inherit packages;};
-    });
+    })
+  );
 }
