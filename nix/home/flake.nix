@@ -6,11 +6,12 @@
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
-    vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
-    vscode-cli-json-path.flake = false;
-
+    flake-utils.url = "github:numtide/flake-utils";
     copilot-cli-fix.url = "github:meatcoder/nix-copilot-cli/2595f0517c88b1ca68faff2d3132e498e7c8e349";
     copilot-cli-fix.inputs.nixpkgs.follows = "nixpkgs";
+
+    vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
+    vscode-cli-json-path.flake = false;
   };
 
   outputs = {
@@ -21,6 +22,7 @@
     home-manager,
     vscode-cli-json-path,
     copilot-cli-fix,
+    flake-utils,
   }: let
     system = "aarch64-linux";
     pkgs = import nixpkgs {inherit system;};
@@ -147,30 +149,33 @@
       programs.starship.enable = true;
       programs.vim.enable = true;
     };
-  in {
-    devShells.default = pkgs.mkShell {inherit packages;};
+  in
+    {
+      # https://github.com/nix-community/home-manager/blob/ba4a1a110204c27805d1a1b5c8b24b3a0da4d063/templates/standalone/flake.nix
+      homeConfigurations."hwanghyun3" = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
 
-    # https://github.com/nix-community/home-manager/blob/ba4a1a110204c27805d1a1b5c8b24b3a0da4d063/templates/standalone/flake.nix
-    homeConfigurations."hwanghyun3" = home-manager.lib.homeManagerConfiguration {
-      inherit pkgs;
+        modules = [
+          {
+            home.stateVersion = "24.11";
+            home.username = "hwanghyun3";
+            home.homeDirectory = "/home/hwanghyun3";
 
-      modules = [
+            home.packages = packages;
+            programs.home-manager.enable = true;
+          }
+          programs
+        ];
+      };
+
+      home-manager-package-options =
         {
           home.stateVersion = "24.11";
-          home.username = "hwanghyun3";
-          home.homeDirectory = "/home/hwanghyun3";
-
           home.packages = packages;
-          programs.home-manager.enable = true;
         }
-        programs
-      ];
-    };
-
-    homeModules.default =
-      {
-        home.packages = packages;
-      }
-      // programs;
-  };
+        // programs;
+    }
+    // flake-utils.lib.eachDefaultSystem (system: {
+      devShells.default = pkgs.mkShell {inherit packages;};
+    });
 }
