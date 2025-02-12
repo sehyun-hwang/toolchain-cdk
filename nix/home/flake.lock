@@ -127,6 +127,18 @@
         "type": "github"
       }
     },
+    "npm-global-src": {
+      "flake": false,
+      "locked": {
+        "path": "../npm-global",
+        "type": "path"
+      },
+      "original": {
+        "path": "../npm-global",
+        "type": "path"
+      },
+      "parent": []
+    },
     "root": {
       "inputs": {
         "copilot-cli-fix": "copilot-cli-fix",
@@ -135,6 +147,7 @@
         "nixpkgs": "nixpkgs",
         "nixpkgs-nerdctl": "nixpkgs-nerdctl",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "npm-global-src": "npm-global-src",
         "vscode-cli-json-path": "vscode-cli-json-path"
       }
     },

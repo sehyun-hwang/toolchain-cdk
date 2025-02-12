@@ -12,6 +12,9 @@
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
+
+    npm-global-src.url = "../npm-global";
+    npm-global-src.flake = false;
   };
 
   outputs = {
@@ -23,6 +26,7 @@
     vscode-cli-json-path,
     copilot-cli-fix,
     flake-utils,
+    npm-global-src,
   }: let
     system = "aarch64-linux";
     pkgs = import nixpkgs {inherit system;};
@@ -32,10 +36,7 @@
     nodejs-global-bin = pkgs.buildNpmPackage {
       pname = "global-bin";
       version = "1.0.0";
-      src =
-        if builtins.pathExists ./npm-global
-        then ./npm-global
-        else ../npm-global;
+      src = npm-global-src.outPath;
       npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
       dontNpmBuild = true;
       dontNpmPrune = true;

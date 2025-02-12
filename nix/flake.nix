@@ -10,6 +10,10 @@ rec {
     addon.url = "./home";
     addon.inputs.nixpkgs.follows = "nixpkgs";
     addon.inputs.home-manager.follows = "home-manager";
+
+    npm-global-src.url = "./npm-global";
+    npm-global-src.flake = false;
+    addon.inputs.npm-global-src.follows = "npm-global-src";
   };
 
   nixConfig = {
