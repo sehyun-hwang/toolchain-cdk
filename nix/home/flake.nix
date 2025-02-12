@@ -1,4 +1,4 @@
-rec {
+{
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -12,8 +12,6 @@ rec {
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
-    npm-global.url = "../npm-global";
-    npm-global.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -22,15 +20,31 @@ rec {
     nixpkgs-unstable,
     nixpkgs-nerdctl,
     home-manager,
-    flake-utils,
-    copilot-cli-fix,
     vscode-cli-json-path,
-    npm-global,
+    copilot-cli-fix,
+    flake-utils,
   }: let
     system = "aarch64-linux";
     pkgs = import nixpkgs {inherit system;};
     unstable-pkgs = import nixpkgs-unstable {inherit system;};
     nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
+
+    nodejs-global-bin = pkgs.buildNpmPackage {
+      pname = "global-bin";
+      version = "1.0.0";
+      src = ../npm-global;
+      npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
+      dontNpmBuild = true;
+      dontNpmPrune = true;
+
+      installPhase = ''
+        mkdir -p $out/bin
+        cp -r * $out/
+        for file in node_modules/.bin/*; do
+          ln -s $out/node_modules/.bin/$(basename $file) $out/bin/$(basename $file)
+        done
+      '';
+    };
 
     containerd-rootless-setuptool = pkgs.stdenv.mkDerivation {
       pname = "containerd-rootless-setuptool";
@@ -106,7 +120,7 @@ rec {
 
         containerd-rootless-setuptool
         copilot-cli-fix.packages.${system}.default
-        npm-global.packages.${system}.default
+        nodejs-global-bin
         vscode-cli
       ]
       ++ [
