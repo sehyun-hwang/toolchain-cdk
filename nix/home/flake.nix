@@ -12,7 +12,10 @@ rec {
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
-    npm-global.url = "../npm-global";
+    npm-global.url =
+      if builtins.pathExists ./home/npm-global
+      then ./home/npm-global
+      else "./npm-global";
     npm-global.inputs.nixpkgs.follows = "nixpkgs";
   };
 
