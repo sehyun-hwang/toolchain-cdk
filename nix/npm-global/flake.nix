@@ -15,7 +15,16 @@
         package = pkgs.buildNpmPackage {
           pname = "global-bin";
           version = "1.0.0";
-          src = ./.;
+          src = pkgs.lib.fileset.toSource {
+            root =
+              if builtins.pathExists ./npm-global
+              then ./npm-global
+              else ./.;
+            fileset = pkgs.lib.fileset.unions [
+              ./package.json
+              ./package-lock.json
+            ];
+          };
           npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
           dontNpmBuild = true;
           dontNpmPrune = true;
