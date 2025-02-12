@@ -7,11 +7,9 @@ rec {
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
 
-    npm-global.url = "./npm-global";
     addon.url = "./home";
     addon.inputs.nixpkgs.follows = "nixpkgs";
     addon.inputs.home-manager.follows = "home-manager";
-    addon.inputs.npm-global.follows = "npm-global";
   };
 
   nixConfig = {
