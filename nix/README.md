@@ -26,5 +26,6 @@ nix develop --extra-experimental-features 'nix-command flakes'
 ## Nix OS
 
 ```sh
-nixos-rebuild --flake .#ec2-dev switch --fast
+nix registry add home-addon $PWD/home
+sudo nixos-rebuild --flake .#ec2-dev switch --fast
 ```

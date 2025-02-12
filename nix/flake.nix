@@ -7,7 +7,7 @@ rec {
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
 
-    addon.url = "./home";
+    addon.url = "flake:home-addon";
     addon.inputs.nixpkgs.follows = "nixpkgs";
     addon.inputs.home-manager.follows = "home-manager";
 
@@ -37,6 +37,7 @@ rec {
     vscode-server,
     nix-index-database,
     addon,
+    npm-global-src,
   }: {
     nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem rec {
       system = "aarch64-linux";

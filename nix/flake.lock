@@ -18,14 +18,15 @@
         "vscode-cli-json-path": "vscode-cli-json-path"
       },
       "locked": {
-        "path": "./home",
+        "lastModified": 1739350589,
+        "narHash": "sha256-3GjLBD3B9vZD5vDocAToTK5nozZrSskczcL4ImAe6UQ=",
+        "path": "/mnt/toolchain-cdk/nix/home",
         "type": "path"
       },
       "original": {
-        "path": "./home",
-        "type": "path"
-      },
-      "parent": []
+        "id": "home-addon",
+        "type": "indirect"
+      }
     },
     "copilot-cli-fix": {
       "inputs": {
@@ -177,11 +178,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1739019272,
-        "narHash": "sha256-7Fu7oazPoYCbDzb9k8D/DdbKrC3aU1zlnc39Y8jy/s8=",
+        "lastModified": 1739138025,
+        "narHash": "sha256-M4ilIfGxzbBZuURokv24aqJTbdjPA9K+DtKUzrJaES4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "fa35a3c8e17a3de613240fea68f876e5b4896aec",
+        "rev": "b2243f41e860ac85c0b446eadc6930359b294e79",
         "type": "github"
       },
       "original": {
@@ -224,14 +225,15 @@
     "npm-global-src": {
       "flake": false,
       "locked": {
-        "path": "./npm-global",
+        "lastModified": 1,
+        "narHash": "sha256-wIbQ8j94myWUA7qi1KvlxnCGg6gljCnj3Uz/YoKWGmE=",
+        "path": "/nix/store/9s1hw1bgn2izk2j1vl5m2d41facqwz10-source/nix/npm-global",
         "type": "path"
       },
       "original": {
-        "path": "./npm-global",
+        "path": "/nix/store/9s1hw1bgn2izk2j1vl5m2d41facqwz10-source/nix/npm-global",
         "type": "path"
-      },
-      "parent": []
+      }
     },
     "root": {
       "inputs": {
@@ -291,7 +293,7 @@
     "vscode-cli-json-path": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-uBaX1lMxrewb2midFo6IG5D/F2RWa0X/7qQdRYMmbkM=",
+        "narHash": "sha256-NKkLeS/RhT/E2w8IjoCR215kHI9FpxSyPYD9uX7FnIQ=",
         "type": "file",
         "url": "https://code.visualstudio.com/sha"
       },
