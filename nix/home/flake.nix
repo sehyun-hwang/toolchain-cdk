@@ -32,7 +32,10 @@
     nodejs-global-bin = pkgs.buildNpmPackage {
       pname = "global-bin";
       version = "1.0.0";
-      src = ../npm-global;
+      src =
+        if builtins.pathExists ./npm-global
+        then ./npm-global
+        else ../npm-global;
       npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
       dontNpmBuild = true;
       dontNpmPrune = true;
