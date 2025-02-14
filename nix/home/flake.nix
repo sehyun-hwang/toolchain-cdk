@@ -29,7 +29,13 @@
     npm-global-src,
   }: let
     system = "aarch64-linux";
-    pkgs = import nixpkgs {inherit system;};
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+      config.permittedInsecurePackages = [
+        "openssl-1.1.1w"
+      ];
+    };
     unstable-pkgs = import nixpkgs-unstable {inherit system;};
     nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
 
@@ -102,6 +108,7 @@
         alejandra
         black
         corepack_22
+        dive
         gnumake
         hadolint
         hugo
@@ -116,6 +123,7 @@
         shellcheck
         shfmt
         stylelint
+        systemctl-tui
         typos
         typos-lsp
 
@@ -127,14 +135,17 @@
         nodejs-global-bin
         vscode-cli
       ]
+      ++ (with pkgs.nodePackages; [
+        prettier
+      ])
       ++ [
         (pkgs.python312.withPackages
           (p: [
             "aws-shell"
           ]))
       ]
-      ++ (with pkgs.nodePackages; [
-        prettier
+      ++ (with python312Packages; [
+        pip
       ]);
 
     programs = {
@@ -148,7 +159,6 @@
       programs.git.enable = true;
       programs.go.enable = true;
       programs.lazygit.enable = true;
-      programs.nix-index.enable = true;
       programs.poetry.enable = true;
       programs.starship.enable = true;
       programs.vim.enable = true;
@@ -165,8 +175,24 @@
             home.username = "hwanghyun3";
             home.homeDirectory = "/home/hwanghyun3";
 
-            home.packages = packages;
+            nix.package = pkgs.nix;
+            nix.settings = {
+              experimental-features = ["nix-command" "flakes"];
+            };
+
             programs.home-manager.enable = true;
+
+            home.packages =
+              packages
+              ++ (with pkgs; [
+                sublime4
+              ]);
+
+            xdg.configFile = {
+              "git/config".enable = false;
+              "git/ignore".enable = false;
+              "git/attributes".enable = false;
+            };
           }
           programs
         ];
