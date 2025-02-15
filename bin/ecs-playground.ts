@@ -5,6 +5,7 @@ import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
+import SimpleReverseProxyStack from '../lib/simple-reverse-proxy';
 import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
@@ -43,7 +44,7 @@ const passwordlessStack = new End2EndPasswordlessExampleStack(app, 'End2EndPassw
   env,
   listener,
   botUrl: 'https://eo20dnx5kq1d0eb.m.pipedream.net',
-  distributionDomainName: 'dist',
+  distributionDomainName: 'd33pxtdicwnfxx.cloudfront.net',
 });
 const {
   verifyApiUrl, passwordlessConfigEntries, passwordlessConfigEntriesLength,
@@ -71,6 +72,10 @@ new BastionStack(app, 'BastionStack', {
 
 new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
   env,
-  vpc,
+  loadBalancerServiceBase,
+});
+
+new SimpleReverseProxyStack(app, 'SimpleReverseProxyStack', {
+  env,
   loadBalancerServiceBase,
 });

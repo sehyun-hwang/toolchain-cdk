@@ -1,4 +1,3 @@
-import type { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import {
@@ -16,17 +15,13 @@ import * as cdk from 'aws-cdk-lib/core';
 import type { Construct } from 'constructs';
 
 interface BedrockOpenAiGatewayStackProps extends cdk.StackProps {
-  vpc: IVpc;
   loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
 }
 
 export default class BedrockOpenAiGatewayStack extends cdk.Stack {
-  vpc: IVpc;
-
   constructor(scope: Construct, id: string, props: BedrockOpenAiGatewayStackProps) {
     super(scope, id, props);
-    const { loadBalancerServiceBase, vpc } = props;
-    this.vpc = vpc;
+    const { loadBalancerServiceBase } = props;
 
     const taskDefinition = new Ec2TaskDefinition(this, 'TaskDefinition');
     taskDefinition.addToTaskRolePolicy(new PolicyStatement({

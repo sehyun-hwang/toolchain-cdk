@@ -2,9 +2,14 @@
 
 import { AutoScalingGroup, GroupMetrics, Monitoring } from 'aws-cdk-lib/aws-autoscaling';
 import {
+  AllowedMethods,
+  CachePolicy,
   type CfnDistribution, Distribution, type IOrigin, type OriginBindOptions,
   OriginProtocolPolicy,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
+import { HttpOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import {
   InstanceArchitecture,
   InstanceClass,
@@ -219,6 +224,7 @@ user-data = ""`);
     if (!listener)
       throw new Error('loadBalancedService.loadBalancer.listeners.length === 0');
     autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
+    autoScalingGroup.connections.allowFrom(Peer.prefixList(prefixListId), Port.tcp(80)); // Temp
     loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
     loadBalancedService.loadBalancer.connections
       .allowFrom(Peer.prefixList(prefixListId), Port.tcp(listener.port));
@@ -250,6 +256,21 @@ user-data = ""`);
     const distribution = new Distribution(this, 'Distribution-2', {
       defaultBehavior: {
         origin: new VpcOrigin(),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
+        cachePolicy: CachePolicy.CACHING_DISABLED,
+      },
+      additionalBehaviors: {
+        '/ttyd/ws': {
+          origin: new HttpOrigin('google.com', {
+            protocolPolicy: OriginProtocolPolicy.HTTP_ONLY,
+          }),
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: AllowedMethods.ALLOW_ALL,
+          originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
+          cachePolicy: CachePolicy.CACHING_DISABLED,
+        },
       },
     });
     this.distributionDomainNameImport = this.exportValue(distribution.distributionDomainName);

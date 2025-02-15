@@ -28,6 +28,8 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
     const args = [
       'build',
       'passwordless',
+      '-f',
+      'passwordless/Dockerfile',
       '--build-context',
       'ttyd-git=https://github.com/tsl0922/ttyd.git',
       '-t',
@@ -41,10 +43,16 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
       .update(args.join(' '))
       .digest('hex');
 
-    const { stdout } = spawnSync(DOCKER_EXECUTABLE, ['image', 'inspect', tag]);
+    const { stdout, stderr, status } = spawnSync(
+      DOCKER_EXECUTABLE,
+      ['image', 'inspect', tag],
+      { encoding: 'utf-8' },
+    );
     const image = new cdk.DockerImage(tag, hash);
-    if (stdout.length)
+    if (!status && stdout.length) {
+      console.log({ status, stdout, stderr });
       return image;
+    }
 
     args.push(tag);
     spawnSync(DOCKER_EXECUTABLE, args, {

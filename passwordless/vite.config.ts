@@ -7,9 +7,9 @@ import cognitoLocal from 'cognito-local';
 import type { AppClient } from 'cognito-local/lib/services/appClient';
 import Pino from 'pino';
 import urlResolve from 'rollup-plugin-url-resolve';
-import { type PluginOption, defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import generateFile from 'vite-plugin-generate-file';
-import { insertHtml, h } from 'vite-plugin-insert-html';
+import { h, insertHtml } from 'vite-plugin-insert-html';
 
 let server: Server;
 
@@ -17,7 +17,7 @@ export default defineConfig(async ({ command, mode }) => {
   console.log(command);
 
   let COGNITO_LOCAL_DB_JSON = null;
-  let passwordlessConfig: Config;
+  let passwordlessConfig: Config | null;
   if (command === 'serve') {
     server = global.server;
     // Local Cognitio server
@@ -33,7 +33,7 @@ export default defineConfig(async ({ command, mode }) => {
 
     // Local Cognito DB
     const { Clients }: {
-      Clients: Record<string, AppClient>
+      Clients: Record<string, AppClient>;
     } = await readFile('.cognito/db/clients.json', 'utf-8')
       .then(JSON.parse);
     const [{
@@ -48,8 +48,10 @@ export default defineConfig(async ({ command, mode }) => {
     COGNITO_LOCAL_DB_JSON = JSON.stringify(`.cognito/db/${userPoolId}.json`);
   } else {
     // command === 'build'
-    passwordlessConfig = await fetch('https://elb.hwangsehyun.com/passwordless/params')
-      .then(res => res.json());
+    passwordlessConfig = await fetch('https://d2qabfmghnmh9l.cloudfront.net/passwordless/params')
+      .then(res => res.json())
+      .catch(console.log)
+      .then(() => null);
   }
 
   const define = {
@@ -113,7 +115,7 @@ export default defineConfig(async ({ command, mode }) => {
           env: 'src/env.js',
         },
         output: {
-          assetFileNames({ name }: { name: string }) {
+          assetFileNames({ name }: { name: string; }) {
             console.log('Asset name', name);
             return `assets/[name]${name === 'env.js' ? '' : '-[hash]'}[extname]`;
           },
