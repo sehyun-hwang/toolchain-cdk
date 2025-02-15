@@ -5,7 +5,7 @@ import {
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import * as cdk from 'aws-cdk-lib/core';
-import { Construct } from 'constructs';
+import type { Construct } from 'constructs';
 
 interface VsCodeEc2StackProps extends cdk.StackProps {
   vpc?: ec2.IVpc;

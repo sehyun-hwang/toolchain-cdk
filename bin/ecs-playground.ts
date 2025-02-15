@@ -1,10 +1,11 @@
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib/core';
 
 import BastionStack from '../lib/bastion';
 import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
+import SimpleReverseProxyStack from '../lib/simple-reverse-proxy';
 import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
@@ -18,7 +19,9 @@ const env = {
 
 const app = new cdk.App();
 
-const { loadBalancerServiceBase, vpc } = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
+const {
+  loadBalancerServiceBase, vpc, distributionDomainNameImport,
+} = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
   env,
 });
 
@@ -36,19 +39,27 @@ new VsCodeEc2Stack(app, 'VsCodeEc2Stack-Us', {
   efsSecurityGroupId: 'sg-00b197c59a79424c6',
 });
 
-const { distributionDomainName } = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
-  env,
-  passwordlessFrontendDistFolderPath: PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH,
-});
-
 const { listener } = loadBalancerServiceBase;
-const { verifyApiUrl } = new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
+const passwordlessStack = new End2EndPasswordlessExampleStack(app, 'End2EndPasswordlessExampleStack', {
   env,
   listener,
   botUrl: 'https://eo20dnx5kq1d0eb.m.pipedream.net',
-  distributionDomainName,
+  distributionDomainName: 'd33pxtdicwnfxx.cloudfront.net',
 });
+const {
+  verifyApiUrl, passwordlessConfigEntries, passwordlessConfigEntriesLength,
+} = passwordlessStack;
 
+const passwordlessFrontendStack = new PasswordlessFrontendStack(app, 'PasswordlessFrontendStack', {
+  env,
+  passwordlessFrontendDistFolderPath: PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH,
+  distributionDomainNameImport,
+  passwordlessConfigEntries,
+  passwordlessConfigEntriesLength,
+});
+passwordlessFrontendStack.addDependency(passwordlessStack, 'passwordlessConfigEntries');
+
+const { distributionDomainName } = passwordlessFrontendStack;
 new BastionStack(app, 'BastionStack', {
   env,
   vpc,
@@ -61,6 +72,10 @@ new BastionStack(app, 'BastionStack', {
 
 new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
   env,
-  vpc,
+  loadBalancerServiceBase,
+});
+
+new SimpleReverseProxyStack(app, 'SimpleReverseProxyStack', {
+  env,
   loadBalancerServiceBase,
 });

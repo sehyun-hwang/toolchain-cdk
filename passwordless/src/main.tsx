@@ -9,11 +9,61 @@ import {
   Passwordless as PasswordlessComponent,
   Fido2Toast,
 } from "amazon-cognito-passwordless-auth/react";
+import type { Config } from "amazon-cognito-passwordless-auth/config";
 
 import App from "./App";
 import { MockPasswordless } from "./local-cognito";
 
-Passwordless.configure(import.meta.env.PASSWORDLESS_CONFIG_JSON);
+const { env } = window as unknown as {
+  env: {
+    VITE_API_BASE: string;
+    PASSWORDLESS_CONFIG: string[] | Config;
+  }
+};
+console.log(env);
+
+function unflattenObject(flatObject: any) {
+  const result = {};
+
+  for (const key in flatObject) {
+    if (flatObject.hasOwnProperty(key)) {
+      const path = key.split('.');
+      let current = result;
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const part = path[i];
+        // @ts-ignore
+        if (!current[part]) {
+          // @ts-ignore
+          current[part] = /^\d+$/.test(part) ? [] : {};
+        }
+        // @ts-ignore
+        current = current[part];
+      }
+
+      const lastPart = path[path.length - 1];
+      // @ts-ignore
+      current[lastPart] = flatObject[key];
+    }
+  }
+
+  return result;
+}
+
+// @ts-ignore
+if (Array.isArray(env.PASSWORDLESS_CONFIG)) {
+  const chunkSize = 2;
+  const entries = env.PASSWORDLESS_CONFIG.reduce((acc, _, i) => {
+    if (i % chunkSize === 0) 
+      // @ts-ignore
+      acc.push(env.PASSWORDLESS_CONFIG.slice(i, i + chunkSize));
+    return acc;
+  }, []);
+  const config = unflattenObject(Object.fromEntries(entries)) as Config
+  console.log(config)
+  Passwordless.configure(config);
+} else
+  Passwordless.configure(env.PASSWORDLESS_CONFIG);
 
 render(
   <PasswordlessContextProvider enableLocalUserCache={true}>

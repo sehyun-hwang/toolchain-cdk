@@ -2,12 +2,12 @@ import { Passwordless } from 'amazon-cognito-passwordless-auth/cdk';
 import type { Config } from 'amazon-cognito-passwordless-auth/config';
 import * as cdk from 'aws-cdk-lib';
 import {
-  CognitoUserPoolsAuthorizer, MockIntegration, PassthroughBehavior, RequestValidator,
+  type CognitoUserPoolsAuthorizer, MockIntegration, PassthroughBehavior, type RequestValidator,
 } from 'aws-cdk-lib/aws-apigateway';
 import {
   type ApplicationListener, ApplicationListenerRule, ListenerAction, ListenerCondition,
 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Construct } from 'constructs';
+import type { Construct } from 'constructs';
 
 interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   listener: ApplicationListener;
@@ -15,10 +15,33 @@ interface End2EndPasswordlessExampleStackProps extends cdk.StackProps {
   distributionDomainName: string;
 }
 
+function flattenObject(obj: any, prefix = ''): Record<string, boolean | number | string> {
+  const result: any = {};
+
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const newKey = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+
+      if (typeof value === 'object' && value !== null) {
+        Object.assign(result, flattenObject(value, newKey));
+      } else {
+        result[newKey] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
   passwordless: Passwordless;
 
   verifyApiUrl: string;
+
+  passwordlessConfigEntries: string[];
+
+  passwordlessConfigEntriesLength: number;
 
   constructor(scope: Construct, id: string, props: End2EndPasswordlessExampleStackProps) {
     super(scope, id, props);
@@ -83,28 +106,30 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       throw new Error('this.passwordless.userPoolClients is undefined');
     if (!this.passwordless.fido2Api)
       throw new Error('passwordless.fido2Api is undefined');
-    const outputs: Config = {
+    const passwordlessConfig: Config = {
       cognitoIdpEndpoint: this.region,
-      clientId: new cdk.CfnOutput(this, 'UserPoolClientId', {
-        value: userPoolClient.userPoolClientId,
-      }).value,
+      clientId: userPoolClient.userPoolClientId,
       fido2: {
-        baseUrl: new cdk.CfnOutput(this, 'Fido2Url', {
-          value: this.passwordless.fido2Api.url,
-        }).value,
+        baseUrl: this.passwordless.fido2Api.url,
         authenticatorSelection: {
           userVerification: 'required',
         },
       },
       clientSecret: userPoolClient.userPoolClientSecret.unsafeUnwrap(),
     };
+    const passwordlessConfigEntries = Object.entries(flattenObject(passwordlessConfig));
+    this.passwordlessConfigEntriesLength = 2 * passwordlessConfigEntries.length;
+    this.passwordlessConfigEntries = this.exportStringListValue(
+      passwordlessConfigEntries.flatMap(x => x),
+      { name: 'foo' },
+    );
 
     const { listener } = props;
     new ApplicationListenerRule(this, 'PasswordlessParamsResponse', {
       listener,
       action: ListenerAction.fixedResponse(200, {
         contentType: 'application/json',
-        messageBody: JSON.stringify(outputs),
+        messageBody: JSON.stringify(passwordlessConfig),
       }),
       conditions: [ListenerCondition.pathPatterns(['/passwordless/params'])],
       priority: 10,
