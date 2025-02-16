@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib/core';
 
 import BastionStack from '../lib/bastion';
 import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
+import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
@@ -78,4 +79,10 @@ new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
 new SimpleReverseProxyStack(app, 'SimpleReverseProxyStack', {
   env,
   loadBalancerServiceBase,
+});
+
+const { cluster } = loadBalancerServiceBase;
+new CloudFlaredStack(app, 'CloudFlaredStack', {
+  env,
+  cluster,
 });
