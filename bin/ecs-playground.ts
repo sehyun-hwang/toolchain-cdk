@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib/core';
 
 import BastionStack from '../lib/bastion';
 import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
+import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
@@ -20,16 +21,19 @@ const env = {
 const app = new cdk.App();
 
 const {
-  loadBalancerServiceBase, vpc, distributionDomainNameImport,
+  loadBalancerServiceBase,
+  vpc,
+  distributionDomainNameImport,
+  capacityProvider,
 } = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
   env,
 });
 
-new VsCodeEc2Stack(app, 'VsCodeEc2Stack', {
-  env,
-  vpc,
-  efsSecurityGroupId: 'sg-042fdc617ba6bff47',
-});
+// new VsCodeEc2Stack(app, 'VsCodeEc2Stack', {
+//   env,
+//   vpc,
+//   efsSecurityGroupId: 'sg-042fdc617ba6bff47',
+// });
 
 new VsCodeEc2Stack(app, 'VsCodeEc2Stack-Us', {
   env: {
@@ -64,6 +68,7 @@ new BastionStack(app, 'BastionStack', {
   env,
   vpc,
   loadBalancerServiceBase,
+  securityGroup: loadBalancerServiceBase.pushSecurityGroup(),
   nginxEnvironment: {
     API_GATEWAY_AUTH_URL: verifyApiUrl,
     ALLOWED_ORIGIN: 'https://' + distributionDomainName,
@@ -78,4 +83,11 @@ new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
 new SimpleReverseProxyStack(app, 'SimpleReverseProxyStack', {
   env,
   loadBalancerServiceBase,
+});
+
+const { cluster } = loadBalancerServiceBase;
+new CloudFlaredStack(app, 'CloudFlaredStack', {
+  env,
+  cluster,
+  capacityProvider,
 });

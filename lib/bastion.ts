@@ -1,5 +1,7 @@
-import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
-import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import assert from 'assert/strict';
+
+import { Port } from 'aws-cdk-lib/aws-ec2';
+import type { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import {
   ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, type ScratchSpace,
@@ -27,6 +29,7 @@ interface BastionStackProps extends cdk.StackProps {
     API_GATEWAY_AUTH_URL: string;
     ALLOWED_ORIGIN: string;
   };
+  securityGroup: SecurityGroup;
 }
 
 export default class BastionStack extends cdk.Stack {
@@ -82,16 +85,17 @@ export default class BastionStack extends cdk.Stack {
     const nginxAsset = new DockerImageAsset(this, 'NginxImageAsset', {
       directory: 'bastion',
     });
-    taskDefinition.addContainer('nginx', {
+    const nginxContainer = taskDefinition.addContainer('nginx', {
       memoryLimitMiB: 256,
       logging: logDriver,
       image: ContainerImage.fromDockerImageAsset(nginxAsset),
       portMappings: [{
+        name: 'nginx',
         containerPort: 80,
       }],
       environment: props.nginxEnvironment,
-    })
-      .addScratch(scratchSpace);
+    });
+    nginxContainer.addScratch(scratchSpace);
 
     const ttydAsset = new DockerImageAsset(this, 'ttydImageAsset', {
       directory: 'bastion/ttyd',
@@ -108,25 +112,32 @@ export default class BastionStack extends cdk.Stack {
     // Service
     const { cluster } = loadBalancerServiceBase;
     const fargateService = new FargateService(this, 'Service', {
+      securityGroups: [props.securityGroup],
       cluster,
       taskDefinition,
       assignPublicIp: true,
       cloudMapOptions: {
-        // Create A records - useful for AWSVPC network mode.
         dnsRecordType: DnsRecordType.A,
       },
       desiredCount: 1,
+      serviceConnectConfiguration: {
+        services: [{
+          portMappingName: 'nginx',
+          dnsName: 'bastion',
+          port: 80,
+        }],
+      },
     });
 
-    const { securityGroupId } = loadBalancerServiceBase.loadBalancer.connections
-      .securityGroups.at(0) || {};
-    if (!securityGroupId)
-      throw new Error('loadBalancerServiceBase.loadBalancer has no security group');
+    // @TODO Refactor from here
+    const securityGroup = loadBalancerServiceBase.loadBalancer.connections
+      .securityGroups.at(0);
+    assert(securityGroup);
+
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {
       listenerArn: loadBalancerServiceBase.listener.listenerArn,
-      securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', securityGroupId),
+      securityGroup,
     });
-
     const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {
       targets: [fargateService],
       vpc: cluster.vpc,
@@ -134,6 +145,8 @@ export default class BastionStack extends cdk.Stack {
       // port: 80,
     });
     fargateService.connections.allowFrom(loadBalancerServiceBase.loadBalancer, Port.tcp(80));
+    // to here
+    // const { listener } = loadBalancerServiceBase;
 
     listener.addTargetGroups('ListenerRule-Options', {
       targetGroups: [targetGroup],
@@ -141,7 +154,7 @@ export default class BastionStack extends cdk.Stack {
         ListenerCondition.pathPatterns(['/spawn', '/ttyd/*']),
         ListenerCondition.httpRequestMethods(['OPTIONS']),
       ],
-      priority: 16,
+      priority: 22,
     });
 
     listener.addTargetGroups('ListenerRule-Spawn', {
@@ -151,7 +164,7 @@ export default class BastionStack extends cdk.Stack {
         ListenerCondition.httpHeader('Authorization', ['*']),
         ListenerCondition.httpRequestMethods(['POST']),
       ],
-      priority: 20,
+      priority: 31,
     });
 
     {
@@ -166,7 +179,7 @@ export default class BastionStack extends cdk.Stack {
           ListenerCondition.pathPatterns(['/spawn']),
           ListenerCondition.httpRequestMethods(['GET']),
         ],
-        priority: 30,
+        priority: 41,
       });
     }
 
@@ -187,7 +200,7 @@ export default class BastionStack extends cdk.Stack {
           ListenerCondition.pathPatterns(['/ttyd/*']),
           ListenerCondition.queryStrings(queryStringConditions),
         ],
-        priority: 40,
+        priority: 51,
       });
 
       const statusCode = 400;
@@ -201,7 +214,7 @@ export default class BastionStack extends cdk.Stack {
           }),
         }),
         conditions: [ListenerCondition.pathPatterns(['/spawn'])],
-        priority: 50,
+        priority: 61,
       });
     }
   }

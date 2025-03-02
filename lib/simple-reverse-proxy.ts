@@ -1,6 +1,4 @@
-import {
-  ContainerImage, Ec2Service, Ec2TaskDefinition,
-} from 'aws-cdk-lib/aws-ecs';
+import { ContainerImage, Ec2Service, Ec2TaskDefinition } from 'aws-cdk-lib/aws-ecs';
 import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
 import * as cdk from 'aws-cdk-lib/core';
 import type { Construct } from 'constructs';
@@ -19,7 +17,7 @@ export default class SimpleReverseProxyStack extends cdk.Stack {
     // @ts-expect-error Protected method
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
     taskDefinition.addContainer('simple-reverse-proxy', {
-      memoryLimitMiB: 128,
+      memoryLimitMiB: 32,
       logging: logDriver,
       image: ContainerImage.fromRegistry('schmailzl/simple-reverse-proxy'),
       portMappings: [{
@@ -36,7 +34,6 @@ export default class SimpleReverseProxyStack extends cdk.Stack {
       },
     });
 
-    // Service
     const { cluster } = loadBalancerServiceBase;
     new Ec2Service(this, 'Service', {
       cluster,
