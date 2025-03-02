@@ -13,7 +13,7 @@ importers:
         version: 3.734.0
       '@aws-solutions-constructs/aws-cloudfront-s3':
         specifier: ^2.76.0
-        version: 2.76.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
+        version: 2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
       amazon-cognito-passwordless-auth:
         specifier: ^0.15.0
         version: 0.15.0(esbuild@0.24.2)
@@ -236,10 +236,10 @@ packages:
       aws-cdk-lib: ^2.173.2
       constructs: ^10.0.0
 
-  '@aws-solutions-constructs/core@2.74.0':
-    resolution: {integrity: sha512-SoXcoXQgA33rhgG8LMhznQO3QZWad3PBgMPvpDAI2CAB8sNMyfWlKsBwIbKzfifeoM+LpQy4oJMhhgsTtJ156Q==}
+  '@aws-solutions-constructs/core@2.77.0':
+    resolution: {integrity: sha512-pJeDB1OFUbsnxJK8sy7VBWffdWZkJqj4keMnMFWHIvDqHE3ptXsFCNhU0fs4zA4IX7f0NSsgZes04PtT6iCzpA==}
     peerDependencies:
-      aws-cdk-lib: ^2.161.0
+      aws-cdk-lib: ^2.177.0
       constructs: ^10.0.0
     bundledDependencies:
       - deepmerge
@@ -1671,23 +1671,22 @@ snapshots:
       '@smithy/types': 4.1.0
       tslib: 2.8.1
 
-  '@aws-solutions-constructs/aws-cloudfront-s3@2.76.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/aws-cloudfront-s3@2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      '@aws-solutions-constructs/core': 2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      '@aws-solutions-constructs/resources': 2.74.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/resources': 2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
       aws-cdk-lib: 2.177.0(constructs@10.4.2)
       constructs: 10.4.2
 
-  '@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      '@aws-cdk/integ-tests-alpha': 2.161.0-alpha.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
       aws-cdk-lib: 2.177.0(constructs@10.4.2)
       constructs: 10.4.2
 
-  '@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
       '@aws-cdk/integ-tests-alpha': 2.161.0-alpha.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      '@aws-solutions-constructs/core': 2.74.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
       aws-cdk-lib: 2.177.0(constructs@10.4.2)
       constructs: 10.4.2
 

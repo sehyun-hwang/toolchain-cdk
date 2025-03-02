@@ -1,5 +1,6 @@
 import {
-  AwsLogDriver, ContainerImage, Ec2Service, Ec2TaskDefinition, type ICluster, Secret,
+  type AsgCapacityProvider, AwsLogDriver, ContainerImage, Ec2Service, Ec2TaskDefinition,
+  type ICluster, Secret,
 } from 'aws-cdk-lib/aws-ecs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import * as cdk from 'aws-cdk-lib/core';
@@ -9,9 +10,12 @@ const TUNNEL_METRICS = '127.0.0.1:8000';
 
 interface CloudFlaredStackProps extends cdk.StackProps {
   cluster: ICluster;
+  capacityProvider: AsgCapacityProvider;
 }
 
 export default class CloudFlaredStack extends cdk.Stack {
+  service: Ec2Service;
+
   constructor(scope: Construct, id: string, props: CloudFlaredStackProps) {
     super(scope, id, props);
     const { cluster } = props;
@@ -21,7 +25,7 @@ export default class CloudFlaredStack extends cdk.Stack {
       parameterName: '/cloudflare/tunnel/token',
     });
     taskDefinition.addContainer('cloudflared', {
-      memoryLimitMiB: 128,
+      memoryLimitMiB: 100,
       logging: new AwsLogDriver({ streamPrefix: this.node.id }),
       image: ContainerImage.fromRegistry('cloudflare/cloudflared'),
       command: ['tunnel', '--no-autoupdate', 'run'],
@@ -36,10 +40,14 @@ export default class CloudFlaredStack extends cdk.Stack {
       },
     });
 
-    new Ec2Service(this, 'Service', {
+    this.service = new Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
       desiredCount: 2,
+      capacityProviderStrategies: [{
+        capacityProvider: props.capacityProvider.capacityProviderName,
+        weight: 10,
+      }],
     });
   }
 }

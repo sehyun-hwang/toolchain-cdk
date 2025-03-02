@@ -47,7 +47,7 @@ export default class BedrockOpenAiGatewayStack extends cdk.Stack {
     // @ts-expect-error Protected method
     const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
     taskDefinition.addContainer('bedrock-proxy-fastapi', {
-      memoryLimitMiB: 128,
+      memoryReservationMiB: 192,
       logging: logDriver,
       image: ContainerImage.fromEcrRepository(repository),
       portMappings: [{
