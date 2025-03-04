@@ -1,6 +1,9 @@
 /* eslint-disable max-classes-per-file */
 
-import { AutoScalingGroup, GroupMetrics, Monitoring } from 'aws-cdk-lib/aws-autoscaling';
+import {
+  AutoScalingGroup, BlockDeviceVolume, EbsDeviceVolumeType, GroupMetrics,
+  Monitoring,
+} from 'aws-cdk-lib/aws-autoscaling';
 import {
   AllowedMethods,
   CachePolicy,
@@ -10,17 +13,11 @@ import {
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { HttpOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { Alarm, ComparisonOperator } from 'aws-cdk-lib/aws-cloudwatch';
 import {
-  InstanceArchitecture,
-  InstanceClass,
-  InstanceSize,
-  InstanceType,
-  type IPrefixList,
-  type IVpc,
-  Peer,
-  Port,
-  PrefixList,
-  Vpc,
+  InstanceArchitecture, InstanceClass, InstanceSize, InstanceType,
+  type IPrefixList, type IVpc,
+  Peer, Port, PrefixList, SecurityGroup, Vpc,
 } from 'aws-cdk-lib/aws-ec2';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -74,7 +71,19 @@ export class AwsManagedPrefixList extends Construct {
   }
 }
 
-class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase { }
+class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase {
+  securityGroups: SecurityGroup[] = [];
+
+  pushSecurityGroup() {
+    const { vpc } = this.cluster;
+    const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.securityGroups.length}`, {
+      vpc,
+      disableInlineRules: true,
+    });
+    this.securityGroups.push(securityGroup);
+    return securityGroup;
+  }
+}
 
 /**
  * @link https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh
@@ -85,6 +94,8 @@ export default class HelloEcsStack extends cdk.Stack {
   loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
 
   distributionDomainNameImport: string;
+
+  capacityProvider: ecs.AsgCapacityProvider;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -112,12 +123,22 @@ export default class HelloEcsStack extends cdk.Stack {
       spotPrice: '0.007', // $0.0032 per Hour when writing, $0.0084 per Hour on-demand
       groupMetrics: [GroupMetrics.all()],
       instanceMonitoring: Monitoring.BASIC,
+      blockDevices: [{
+        deviceName: '/dev/xvda',
+        volume: BlockDeviceVolume.ebs(2, {
+          volumeType: EbsDeviceVolumeType.GP3,
+        }),
+      }, {
+        deviceName: '/dev/xvdb',
+        volume: BlockDeviceVolume.ebs(4, {
+          volumeType: EbsDeviceVolumeType.GP3,
+        }),
+      }],
     });
     autoScalingGroup.addUserData(`[settings.bootstrap-containers.bear]
 source = "public.ecr.aws/bottlerocket/bottlerocket-bootstrap:v0.1.0"
 mode = "once"
 user-data = ""`);
-
     const capacityProviderName = 'prefix-' + cdk.Names.nodeUniqueId(new cdk.CfnOutput(this, 'AsgCapacityProviderName', {
       value: '',
     }).node);
@@ -125,17 +146,31 @@ user-data = ""`);
       capacityProviderName,
       autoScalingGroup,
       machineImageType: ecs.MachineImageType.BOTTLEROCKET,
+      spotInstanceDraining: true,
     });
+    this.capacityProvider = capacityProvider;
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
       enableFargateCapacityProviders: true,
+      containerInsightsV2: ecs.ContainerInsights.ENABLED,
     });
+    cluster.addAsgCapacityProvider(capacityProvider);
+    cluster.addDefaultCapacityProviderStrategy([{
+      capacityProvider: capacityProvider.capacityProviderName,
+    }]);
+    new Alarm(this, 'MemoryReservationAlarm', {
+      metric: cluster.metricMemoryReservation({
+        period: cdk.Duration.minutes(1),
+        statistic: 'max',
+      }),
+      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+      threshold: 50,
+      evaluationPeriods: 2,
+    });
+
     cluster.addDefaultCloudMapNamespace({
       name: 'cluster-' + cluster.clusterName,
-    });
-    cluster.addAsgCapacityProvider(capacityProvider, {
-      spotInstanceDraining: true,
     });
 
     const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
@@ -174,12 +209,6 @@ user-data = ""`);
     });
     this.loadBalancerServiceBase = loadBalancedService;
 
-    // Update canceled. Cannot update export
-    // EcsPlaygroundStack:ExportsOutputRefServiceLBPublicListener46709EAA7B4E02A1
-    // as it is in use by BastionStack, BedrockOpenAiGatewayStack and End2EndPasswordlessExampleStack.
-    this.exportValue('arn:aws:elasticloadbalancing:ap-northeast-1:248837585826:listener/app/EcsPla-Servi-ShYrFsXSxV2J/59691d730ef352f7/a27214c20fe49b16', {
-      name: 'EcsPlaygroundStack:ExportsOutputRefServiceLBPublicListener46709EAA7B4E02A1',
-    });
     (loadBalancedService.listener.node.defaultChild as cdk.CfnElement)
       .overrideLogicalId('ServiceLBPublicListener46709EAA7B4E02A1Temp');
 
@@ -188,7 +217,7 @@ user-data = ""`);
     // @ts-expect-error Protected method
     const logDriver = loadBalancedService.createAWSLogDriver(this.node.id);
     taskDefinition.addContainer('stress-webhook', {
-      memoryLimitMiB: 256,
+      memoryLimitMiB: 100,
       logging: logDriver,
       image: ecs.ContainerImage.fromDockerImageAsset(asset),
       portMappings: [{
@@ -197,7 +226,7 @@ user-data = ""`);
     });
     taskDefinition.addContainer('whoami', {
       image: ecs.ContainerImage.fromRegistry('traefik/whoami'),
-      memoryLimitMiB: 256,
+      memoryLimitMiB: 100,
       logging: logDriver,
     });
 
@@ -210,19 +239,17 @@ user-data = ""`);
 
     ec2Service.autoScaleTaskCount({
       minCapacity: 1,
-      maxCapacity: 20,
+      maxCapacity: 3,
     }).scaleOnCpuUtilization('CpuScaling', {
       targetUtilizationPercent: 40,
     });
     loadBalancedService.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '0');
 
     // Security
+    const { listener } = loadBalancedService;
     const { prefixList: { prefixListId } } = new AwsManagedPrefixList(this, 'CloudFrontPrefixList', {
       name: 'com.amazonaws.global.cloudfront.origin-facing',
     });
-    const [listener] = loadBalancedService.loadBalancer.listeners;
-    if (!listener)
-      throw new Error('loadBalancedService.loadBalancer.listeners.length === 0');
     autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
     autoScalingGroup.connections.allowFrom(Peer.prefixList(prefixListId), Port.tcp(80)); // Temp
     loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
@@ -263,12 +290,12 @@ user-data = ""`);
       },
       additionalBehaviors: {
         '/ttyd/ws': {
-          origin: new HttpOrigin('google.com', {
-            protocolPolicy: OriginProtocolPolicy.HTTP_ONLY,
+          origin: new HttpOrigin('ttyd.3091977.xyz', {
+            protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
           }),
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: AllowedMethods.ALLOW_ALL,
-          originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
+          originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
           cachePolicy: CachePolicy.CACHING_DISABLED,
         },
       },
