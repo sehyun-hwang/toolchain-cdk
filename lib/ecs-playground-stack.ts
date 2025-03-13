@@ -5,14 +5,10 @@ import {
   Monitoring,
 } from 'aws-cdk-lib/aws-autoscaling';
 import {
-  AllowedMethods,
-  CachePolicy,
-  type CfnDistribution, Distribution, type IOrigin, type OriginBindOptions,
-  OriginProtocolPolicy,
-  OriginRequestPolicy,
-  ViewerProtocolPolicy,
+  AllowedMethods, CachePolicy, Distribution,
+  OriginProtocolPolicy, OriginRequestPolicy, ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
-import { HttpOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { HttpOrigin, VpcOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Alarm, ComparisonOperator } from 'aws-cdk-lib/aws-cloudwatch';
 import {
   InstanceArchitecture, InstanceClass, InstanceSize, InstanceType,
@@ -26,8 +22,6 @@ import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import * as cdk from 'aws-cdk-lib/core';
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
-
-import { CfnVpcOrigin } from './cloudfront.generated';
 
 export interface AwsManagedPrefixListProps {
   /**
@@ -153,7 +147,7 @@ user-data = ""`);
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
       enableFargateCapacityProviders: true,
-      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+      containerInsightsV2: ecs.ContainerInsights.DISABLED,
     });
     cluster.addAsgCapacityProvider(capacityProvider);
     cluster.addDefaultCapacityProviderStrategy([{
@@ -258,31 +252,11 @@ user-data = ""`);
     loadBalancedService.loadBalancer.connections
       .allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
 
-    const { attrId } = new CfnVpcOrigin(this, 'CfnVpcOrigin-2', {
-      vpcOriginEndpointConfig: {
-        arn: loadBalancedService.loadBalancer.loadBalancerArn,
-        name: cdk.Names.uniqueId(loadBalancedService.loadBalancer),
-        originProtocolPolicy: OriginProtocolPolicy.HTTP_ONLY,
-      },
-    });
-
-    class VpcOrigin implements IOrigin {
-      bind(scope: Construct, options: OriginBindOptions) {
-        return {
-          originProperty: {
-            id: attrId,
-            domainName: loadBalancedService.loadBalancer.loadBalancerDnsName,
-          },
-          // failoverConfig: {
-          //   failoverOrigin: null
-          // },
-        };
-      }
-    }
-
     const distribution = new Distribution(this, 'Distribution-2', {
       defaultBehavior: {
-        origin: new VpcOrigin(),
+        origin: VpcOrigin.withApplicationLoadBalancer(this.loadBalancerServiceBase.loadBalancer, {
+          protocolPolicy: OriginProtocolPolicy.HTTP_ONLY,
+        }),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         allowedMethods: AllowedMethods.ALLOW_ALL,
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
@@ -301,13 +275,5 @@ user-data = ""`);
       },
     });
     this.distributionDomainNameImport = this.exportValue(distribution.distributionDomainName);
-    // this.distributionDomainNameImport = this.exportValue('mock', {
-    //   name: 'mock',
-    // });
-
-    const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
-    cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.VpcOriginConfig', {
-      VpcOriginId: attrId,
-    });
   }
 }

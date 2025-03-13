@@ -136,16 +136,14 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
     });
 
     const restApi = this.passwordless.fido2Api;
-    const congitoIdentityHeaderKey = 'method.response.header.X-Cognito-Identity-Id';
+    const cognitoIdentityHeaderKey = 'method.response.header.X-Cognito-Identity-Id';
     const integration = new MockIntegration({
-      integrationResponses: [
-        {
-          statusCode: '200',
-          responseParameters: {
-            [congitoIdentityHeaderKey]: 'context.authorizer.claims.sub',
-          },
+      integrationResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          [cognitoIdentityHeaderKey]: 'context.authorizer.claims.sub',
         },
-      ],
+      }],
       passthroughBehavior: PassthroughBehavior.NEVER,
       requestTemplates: {
         'application/json': '{"statusCode":200}',
@@ -161,7 +159,7 @@ export default class End2EndPasswordlessExampleStack extends cdk.Stack {
       methodResponses: [{
         statusCode: '200',
         responseParameters: {
-          [congitoIdentityHeaderKey]: true,
+          [cognitoIdentityHeaderKey]: true,
         },
       }],
     });

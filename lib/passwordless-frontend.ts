@@ -49,10 +49,9 @@ export default class PasswordlessFrontendStack extends cdk.Stack {
       { encoding: 'utf-8' },
     );
     const image = new cdk.DockerImage(tag, hash);
-    if (!status && stdout.length) {
-      console.log({ status, stdout, stderr });
+    if (!status && stdout.length)
       return image;
-    }
+    console.log({ status, stdout, stderr });
 
     args.push(tag);
     spawnSync(DOCKER_EXECUTABLE, args, {
