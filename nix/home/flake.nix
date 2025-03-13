@@ -43,7 +43,7 @@
       pname = "global-bin";
       version = "1.0.0";
       src = npm-global-src.outPath;
-      npmDepsHash = "sha256-ALDbRAwPnMnBWNTBj1rtjX74jAGqG+jEfK0iuhHVcmo=";
+      npmDepsHash = "sha256-dcex9FXavMPX2FJsSadrnRlnAbeI7JuYaLCgqxNss90=";
       dontNpmBuild = true;
       dontNpmPrune = true;
 
@@ -70,6 +70,20 @@
       '';
     };
 
+    docker-buildx-desktop = pkgs.stdenv.mkDerivation rec {
+      pname = "docker-buildx-desktop";
+      version = "v0.21.2-desktop.1";
+      src = builtins.fetchurl {
+        url = "https://github.com/docker/buildx-desktop/releases/download/${version}/buildx-${version}.linux-arm64";
+        sha256 = "sha256:0jfqfqlnz15mqiz014k7s13yigb168p72q3yqnb1q1jj1lvkc3mn";
+      };
+
+      dontUnpack = true;
+      installPhase = ''
+        install -DvT $src $out/bin/docker-buildx
+      '';
+    };
+
     vscode-cli-os =
       if pkgs.stdenv.isDarwin
       then "darwin"
@@ -90,15 +104,15 @@
     vscode-cli = pkgs.stdenv.mkDerivation {
       pname = "vscode-cli";
       version = vscode-cli-product.productVersion;
-      sourceRoot = ".";
       src = builtins.fetchurl {
         url = vscode-cli-product.url;
         sha256 = vscode-cli-product.sha256hash;
       };
 
+      sourceRoot = ".";
       installPhase = ''
         ./code --version
-        install -D -t $out/bin code
+        install -Dvt $out/bin code
       '';
     };
 
@@ -111,7 +125,8 @@
         dive
         gnumake
         hadolint
-        hugo
+        k3s_1_30
+        kubernetes-helm
         markdownlint-cli2
         nil
         nixos-rebuild
@@ -127,17 +142,21 @@
         typos
         typos-lsp
 
+        (lib.hiPrio unstable-pkgs.containerd)
         nerdctl-pkgs.nerdctl
         unstable-pkgs.atuin
+        unstable-pkgs.hugo
 
         containerd-rootless-setuptool
         copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
+        docker-buildx-desktop
       ]
-      ++ (with pkgs.nodePackages; [
-        prettier
-      ])
+      ++ [
+        pkgs.nodePackages.prettier
+        unstable-pkgs.nodePackages.eslint
+      ]
       ++ [
         (pkgs.python312.withPackages
           (p: [
