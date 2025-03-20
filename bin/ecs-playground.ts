@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib/core';
 
 import BastionStack from '../lib/bastion';
 import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
+import { ChatBotStack, GlobalChatBotStack } from '../lib/chatbot';
 import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
@@ -10,6 +11,11 @@ import SimpleReverseProxyStack from '../lib/simple-reverse-proxy';
 import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
+const CHATBOT_REGIONS = [
+  'ap-northeast-1', // Prod
+  'us-west-2', // VsCode
+  'us-east-1', // GlobalChatBot
+];
 
 const env = {
   // eslint-disable-next-line dot-notation
@@ -90,4 +96,23 @@ new CloudFlaredStack(app, 'CloudFlaredStack', {
   env,
   cluster,
   capacityProvider,
+});
+
+CHATBOT_REGIONS.forEach(region => {
+  new ChatBotStack(app, 'ChatBotStack-' + region, {
+    stackName: 'ChatBotStack',
+    env: {
+      account: env.account,
+      region,
+    },
+  });
+});
+
+new GlobalChatBotStack(app, 'GlobalChatBotStack', {
+  env: {
+    account: env.account,
+    region: 'us-east-1',
+  },
+  regions: CHATBOT_REGIONS,
+  chatConfigurationArn: 'arn:aws:chatbot::248837585826:chat-configuration/slack-channel/default',
 });

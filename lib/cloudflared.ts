@@ -46,7 +46,7 @@ export default class CloudFlaredStack extends cdk.Stack {
       desiredCount: 2,
       capacityProviderStrategies: [{
         capacityProvider: props.capacityProvider.capacityProviderName,
-        weight: 10,
+        weight: 1,
       }],
     });
   }
