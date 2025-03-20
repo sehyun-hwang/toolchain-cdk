@@ -144,41 +144,8 @@ user-data = ""`);
     });
     this.capacityProvider = capacityProvider;
 
-    const cluster = new ecs.Cluster(this, 'Cluster', {
-      vpc,
-      enableFargateCapacityProviders: true,
-      containerInsightsV2: ecs.ContainerInsights.DISABLED,
-    });
-    cluster.addAsgCapacityProvider(capacityProvider);
-    cluster.addDefaultCapacityProviderStrategy([{
-      capacityProvider: capacityProvider.capacityProviderName,
-    }]);
-    new Alarm(this, 'MemoryReservationAlarm', {
-      metric: cluster.metricMemoryReservation({
-        period: cdk.Duration.minutes(1),
-        statistic: 'max',
-      }),
-      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
-      threshold: 50,
-      evaluationPeriods: 2,
-    });
-
-    cluster.addDefaultCloudMapNamespace({
-      name: 'cluster-' + cluster.clusterName,
-    });
-
-    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
-      directory: 'webhook',
-    });
-
-    // const certificate = Certificate.fromCertificateArn(
-    //   this,
-    //   'Certificate',
-    //   'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
-    // );
-
     const loadBalancedService = new ApplicationLoadBalancedService(this, 'Service', {
-      cluster,
+      vpc,
 
       // Internet-facing
       publicLoadBalancer: false,
@@ -202,6 +169,37 @@ user-data = ""`);
       enableECSManagedTags: true,
     });
     this.loadBalancerServiceBase = loadBalancedService;
+
+    const cluster = loadBalancedService.cluster as unknown as ecs.Cluster;
+    cluster.addAsgCapacityProvider(capacityProvider);
+    cluster.addDefaultCapacityProviderStrategy([{
+      capacityProvider: capacityProvider.capacityProviderName,
+    }]);
+    cluster.enableFargateCapacityProviders();
+    const { Ref } = this.resolve(cluster.clusterName);
+    cluster.addDefaultCloudMapNamespace({
+      name: Ref,
+    });
+
+    new Alarm(this, 'MemoryReservationAlarm', {
+      metric: cluster.metricMemoryReservation({
+        period: cdk.Duration.minutes(1),
+        statistic: 'max',
+      }),
+      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+      threshold: 50,
+      evaluationPeriods: 2,
+    });
+
+    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
+      directory: 'webhook',
+    });
+
+    // const certificate = Certificate.fromCertificateArn(
+    //   this,
+    //   'Certificate',
+    //   'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
+    // );
 
     (loadBalancedService.listener.node.defaultChild as cdk.CfnElement)
       .overrideLogicalId('ServiceLBPublicListener46709EAA7B4E02A1Temp');

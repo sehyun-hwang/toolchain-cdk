@@ -5,9 +5,10 @@ import BedrockOpenAiGatewayStack from '../lib/bedrock-open-ai-gateway';
 import { ChatBotStack, GlobalChatBotStack } from '../lib/chatbot';
 import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
+import K3sApiStack from '../lib/k3s-api';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
-import SimpleReverseProxyStack from '../lib/simple-reverse-proxy';
+import SimpleReverseProxyNestedStack from '../lib/simple-reverse-proxy';
 import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
@@ -86,15 +87,22 @@ new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
   loadBalancerServiceBase,
 });
 
-new SimpleReverseProxyStack(app, 'SimpleReverseProxyStack', {
-  env,
+const serviceStack = new cdk.Stack(app, 'ServiceStatck', { env });
+
+new SimpleReverseProxyNestedStack(serviceStack, 'SimpleReverseProxyStack', {
   loadBalancerServiceBase,
+  capacityProvider,
 });
 
 const { cluster } = loadBalancerServiceBase;
 new CloudFlaredStack(app, 'CloudFlaredStack', {
   env,
   cluster,
+  capacityProvider,
+});
+
+new K3sApiStack(serviceStack, 'K3sApiStack', {
+  loadBalancerServiceBase,
   capacityProvider,
 });
 
