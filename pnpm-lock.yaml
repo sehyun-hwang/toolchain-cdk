@@ -13,16 +13,19 @@ importers:
         version: 3.734.0
       '@aws-solutions-constructs/aws-cloudfront-s3':
         specifier: ^2.76.0
-        version: 2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
+        version: 2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/aws-eventbridge-sns':
+        specifier: ^2.78.0
+        version: 2.78.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/aws-eventbridge-stepfunctions':
+        specifier: ^2.79.0
+        version: 2.79.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
       amazon-cognito-passwordless-auth:
         specifier: ^0.15.0
         version: 0.15.0(esbuild@0.24.2)
       aws-cdk-lib:
-        specifier: 2.177.0
-        version: 2.177.0(constructs@10.4.2)
-      aws-lambda-reverse-proxy.git:
-        specifier: github:Ircama/aws-lambda-reverse-proxy
-        version: aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/b8b1ed919e52de312354145a2e3a6afad9921e0f
+        specifier: 2.182.0
+        version: 2.182.0(constructs@10.4.2)
       constructs:
         specifier: ^10.4.2
         version: 10.4.2
@@ -42,9 +45,6 @@ importers:
       '@types/node':
         specifier: 22.12.0
         version: 22.12.0
-      aws-cdk:
-        specifier: 2.177.0
-        version: 2.177.0
       esbuild:
         specifier: ^0.24.2
         version: 0.24.2
@@ -57,17 +57,15 @@ importers:
 
 packages:
 
-  '@aws-cdk/asset-awscli-v1@2.2.221':
-    resolution: {integrity: sha512-+Vu2cMvgtkaHwNezrTVng4+FAMAWKJTkC/2ZQlgkbY05k0lHHK/2eWKqBhTeA7EpxVrx9uFN7GdBFz3mcThpxg==}
-
-  '@aws-cdk/asset-kubectl-v20@2.1.3':
-    resolution: {integrity: sha512-cDG1w3ieM6eOT9mTefRuTypk95+oyD7P5X/wRltwmYxU7nZc3+076YEVS6vrjDKr3ADYbfn0lDKpfB1FBtO9CQ==}
+  '@aws-cdk/asset-awscli-v1@2.2.226':
+    resolution: {integrity: sha512-dlf8mTsW6ulV9pUxiYHSRHtQfZhHX1gmLEbHGE1sPI//skgkma+p5CVBeSiou9QEdcHOvOVruYzxY9OZ/GDS7g==}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.0':
     resolution: {integrity: sha512-7bY3J8GCVxLupn/kNmpPc5VJz8grx+4RKfnnJiO1LG+uxkZfANZG3RMHhE+qQxxwkyQ9/MfPtTpf748UhR425A==}
 
-  '@aws-cdk/cloud-assembly-schema@39.2.8':
-    resolution: {integrity: sha512-VkppFgLbm5M1/K8S+BimI/0COq+E9fCDcdDyAe4gFizHNZTALZA4sMds2kug1rtPFKCcWAexrycs2D4iQHcRCw==}
+  '@aws-cdk/cloud-assembly-schema@40.7.0':
+    resolution: {integrity: sha512-00wVKn9pOOGXbeNwA4E8FUFt0zIB4PmSO7PvIiDWgpaFX3G/sWyy0A3s6bg/n2Yvkghu8r4a8ckm+mAzkAYmfA==}
+    engines: {node: '>= 14.15.0'}
     bundledDependencies:
       - jsonschema
       - semver
@@ -234,6 +232,20 @@ packages:
       '@aws-solutions-constructs/core': 2.76.0
       '@aws-solutions-constructs/resources': 2.76.0
       aws-cdk-lib: ^2.173.2
+      constructs: ^10.0.0
+
+  '@aws-solutions-constructs/aws-eventbridge-sns@2.78.0':
+    resolution: {integrity: sha512-Y0wEcDBgLM9DtrMI8BwwsIyvovmCVhS2nSTfC+cGiOU3cz1/z2oPgAvsBYjGbwGi7B9OdqliqSOcuD+Jra3rdw==}
+    peerDependencies:
+      '@aws-solutions-constructs/core': 2.78.0
+      aws-cdk-lib: ^2.177.0
+      constructs: ^10.0.0
+
+  '@aws-solutions-constructs/aws-eventbridge-stepfunctions@2.79.0':
+    resolution: {integrity: sha512-jsAo+HQ2H0vP7Hc70yFoK3i4+1mJfJ1a/Nq/QQLwV3cH/6t6KRM8xtK4j0F1MygUV5QVir2fu5cWqzUFvNyXgw==}
+    peerDependencies:
+      '@aws-solutions-constructs/core': 2.79.0
+      aws-cdk-lib: ^2.177.0
       constructs: ^10.0.0
 
   '@aws-solutions-constructs/core@2.77.0':
@@ -829,8 +841,8 @@ packages:
     resolution: {integrity: sha512-Cxwpt2SfTzTtXcfOlzGEee8O+c+MmUgGrNiBcXnuWxuFJHe6a5Hz7qwhwe5OgaSYI0IJvkLqWX1ASG+cJOkEiA==}
     engines: {node: '>=10'}
 
-  aws-cdk-lib@2.177.0:
-    resolution: {integrity: sha512-nTnHAwjZaPJ5gfJjtzE/MyK6q0a66nWthoJl7l8srucRb+I30dczhbbXor6QCdVpJaTRAEliMOMq23aglsAQbg==}
+  aws-cdk-lib@2.182.0:
+    resolution: {integrity: sha512-emymzTJiCpPz8oF++oiFvFuLH1QZjv6NRNQGn7VuDrEewZFTM4VpiVco5NrxH+KCWnXquDBPF5sQIUo6HY7jLg==}
     engines: {node: '>= 14.15.0'}
     peerDependencies:
       constructs: ^10.0.0
@@ -847,18 +859,9 @@ packages:
       - yaml
       - mime-types
 
-  aws-cdk@2.177.0:
-    resolution: {integrity: sha512-TiBoyE5wMB5q4jX1bELwkklgbs5eLY1Phjfnb4Mof0K9tOSRJ9UEq6xEamF0esMS+TuYU7a/ESTpmKX3iYqA3w==}
-    engines: {node: '>= 14.15.0'}
-    hasBin: true
-
   aws-jwt-verify@4.0.1:
     resolution: {integrity: sha512-kzvi71eD3w/mCpYRUY7cz6DX4bfYihGdI2yV3FYQ2JuZZenqAqDPz0gWj0ew6vlAtdEVBNb7p+Dm2TAIxpVYMA==}
     engines: {node: '>=14.0.0'}
-
-  aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/b8b1ed919e52de312354145a2e3a6afad9921e0f:
-    resolution: {tarball: https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/b8b1ed919e52de312354145a2e3a6afad9921e0f}
-    version: 0.0.0
 
   bowser@2.11.0:
     resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
@@ -928,11 +931,6 @@ packages:
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
-
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
 
   globals@15.14.0:
     resolution: {integrity: sha512-OkToC372DtlQeje9/zHIo5CT8lRP/FUgEOKBEhU4e0abL7J7CD24fD9ohiLN5hagG/kWCYj4K5oaxxtj2Z0Dig==}
@@ -1053,17 +1051,15 @@ packages:
 
 snapshots:
 
-  '@aws-cdk/asset-awscli-v1@2.2.221': {}
-
-  '@aws-cdk/asset-kubectl-v20@2.1.3': {}
+  '@aws-cdk/asset-awscli-v1@2.2.226': {}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.0': {}
 
-  '@aws-cdk/cloud-assembly-schema@39.2.8': {}
+  '@aws-cdk/cloud-assembly-schema@40.7.0': {}
 
-  '@aws-cdk/integ-tests-alpha@2.161.0-alpha.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-cdk/integ-tests-alpha@2.161.0-alpha.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      aws-cdk-lib: 2.177.0(constructs@10.4.2)
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
       constructs: 10.4.2
 
   '@aws-crypto/crc32@5.2.0':
@@ -1671,23 +1667,35 @@ snapshots:
       '@smithy/types': 4.1.0
       tslib: 2.8.1
 
-  '@aws-solutions-constructs/aws-cloudfront-s3@2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/aws-cloudfront-s3@2.76.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      '@aws-solutions-constructs/resources': 2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      aws-cdk-lib: 2.177.0(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/resources': 2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
       constructs: 10.4.2
 
-  '@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/aws-eventbridge-sns@2.78.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      aws-cdk-lib: 2.177.0(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
       constructs: 10.4.2
 
-  '@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)':
+  '@aws-solutions-constructs/aws-eventbridge-stepfunctions@2.79.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
     dependencies:
-      '@aws-cdk/integ-tests-alpha': 2.161.0-alpha.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.177.0(constructs@10.4.2))(constructs@10.4.2)
-      aws-cdk-lib: 2.177.0(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
+      constructs: 10.4.2
+
+  '@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
+    dependencies:
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
+      constructs: 10.4.2
+
+  '@aws-solutions-constructs/resources@2.74.0(@aws-solutions-constructs/core@2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2))(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)':
+    dependencies:
+      '@aws-cdk/integ-tests-alpha': 2.161.0-alpha.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      '@aws-solutions-constructs/core': 2.77.0(aws-cdk-lib@2.182.0(constructs@10.4.2))(constructs@10.4.2)
+      aws-cdk-lib: 2.182.0(constructs@10.4.2)
       constructs: 10.4.2
 
   '@babel/code-frame@7.26.2':
@@ -2289,21 +2297,14 @@ snapshots:
 
   ansi-styles@5.2.0: {}
 
-  aws-cdk-lib@2.177.0(constructs@10.4.2):
+  aws-cdk-lib@2.182.0(constructs@10.4.2):
     dependencies:
-      '@aws-cdk/asset-awscli-v1': 2.2.221
-      '@aws-cdk/asset-kubectl-v20': 2.1.3
+      '@aws-cdk/asset-awscli-v1': 2.2.226
       '@aws-cdk/asset-node-proxy-agent-v6': 2.1.0
-      '@aws-cdk/cloud-assembly-schema': 39.2.8
+      '@aws-cdk/cloud-assembly-schema': 40.7.0
       constructs: 10.4.2
 
-  aws-cdk@2.177.0:
-    optionalDependencies:
-      fsevents: 2.3.2
-
   aws-jwt-verify@4.0.1: {}
-
-  aws-lambda-reverse-proxy@https://codeload.github.com/Ircama/aws-lambda-reverse-proxy/tar.gz/b8b1ed919e52de312354145a2e3a6afad9921e0f: {}
 
   bowser@2.11.0: {}
 
@@ -2385,9 +2386,6 @@ snapshots:
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
-
-  fsevents@2.3.2:
-    optional: true
 
   globals@15.14.0: {}
 
