@@ -43,7 +43,10 @@
       pname = "global-bin";
       version = "1.0.0";
       src = npm-global-src.outPath;
-      npmDepsHash = "sha256-dcex9FXavMPX2FJsSadrnRlnAbeI7JuYaLCgqxNss90=";
+      npmDepsHash =
+        "sha256-3byY2y3hhkKRLO/XoOJMf1vBEUjeat/Olqm6ZALQMfw="
+        # pkgs.lib.fakeHash
+        ;
       dontNpmBuild = true;
       dontNpmPrune = true;
 
@@ -146,6 +149,7 @@
         nerdctl-pkgs.nerdctl
         unstable-pkgs.atuin
         unstable-pkgs.hugo
+        unstable-pkgs.pulumi-bin
 
         containerd-rootless-setuptool
         copilot-cli-fix.packages.${system}.default
@@ -155,7 +159,9 @@
       ]
       ++ [
         pkgs.nodePackages.prettier
+
         unstable-pkgs.nodePackages.eslint
+        unstable-pkgs.nodePackages.aws-cdk
       ]
       ++ [
         (pkgs.python312.withPackages
