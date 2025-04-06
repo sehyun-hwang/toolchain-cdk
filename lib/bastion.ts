@@ -1,7 +1,7 @@
 import assert from 'assert/strict';
 
-import { Port } from 'aws-cdk-lib/aws-ec2';
 import type { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { Port } from 'aws-cdk-lib/aws-ec2';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import {
   ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, type ScratchSpace,
@@ -111,7 +111,7 @@ export default class BastionStack extends cdk.Stack {
 
     // Service
     const { cluster } = loadBalancerServiceBase;
-    const fargateService = new FargateService(this, 'Service', {
+    const service = new FargateService(this, 'Service', {
       securityGroups: [props.securityGroup],
       cluster,
       taskDefinition,
@@ -139,14 +139,13 @@ export default class BastionStack extends cdk.Stack {
       securityGroup,
     });
     const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {
-      targets: [fargateService],
+      targets: [service],
       vpc: cluster.vpc,
       protocol: ApplicationProtocol.HTTP,
       // port: 80,
     });
-    fargateService.connections.allowFrom(loadBalancerServiceBase.loadBalancer, Port.tcp(80));
+    service.connections.allowFrom(loadBalancerServiceBase.loadBalancer, Port.tcp(80));
     // to here
-    // const { listener } = loadBalancerServiceBase;
 
     listener.addTargetGroups('ListenerRule-Options', {
       targetGroups: [targetGroup],

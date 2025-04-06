@@ -6,9 +6,11 @@ import { ChatBotStack, GlobalChatBotStack } from '../lib/chatbot';
 import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import K3sApiStack from '../lib/k3s-api';
+import KineStack from '../lib/kine';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
 import SimpleReverseProxyNestedStack from '../lib/simple-reverse-proxy';
+import TailscaleStack from '../lib/tailscale';
 import VsCodeEc2Stack from '../lib/vscode';
 
 const PASSWORDLESS_FRONTEND_DIST_FOLDER_PATH = 'passwordless/dist';
@@ -26,6 +28,14 @@ const env = {
 };
 
 const app = new cdk.App();
+
+const PGBOUNCER_ENV = {
+  DB_HOST: 'default-postgres.cwggjv4mxugb.us-west-2.rds.amazonaws.com',
+  DB_USER: 'k3s',
+  DB_NAME: 'k3s',
+  DB_CA_BUNDLE: await fetch('https://truststore.pki.rds.amazonaws.com/us-west-2/us-west-2-bundle.pem')
+    .then(res => res.text()),
+};
 
 const {
   loadBalancerServiceBase,
@@ -87,7 +97,7 @@ new BedrockOpenAiGatewayStack(app, 'BedrockOpenAiGatewayStack', {
   loadBalancerServiceBase,
 });
 
-const serviceStack = new cdk.Stack(app, 'ServiceStatck', { env });
+const serviceStack = new cdk.Stack(app, 'ServiceStack', { env });
 
 new SimpleReverseProxyNestedStack(serviceStack, 'SimpleReverseProxyStack', {
   loadBalancerServiceBase,
@@ -99,6 +109,17 @@ new CloudFlaredStack(app, 'CloudFlaredStack', {
   env,
   cluster,
   capacityProvider,
+});
+
+new TailscaleStack(serviceStack, 'TailscaleStack', {
+  loadBalancerServiceBase,
+  capacityProvider,
+});
+
+new KineStack(serviceStack, 'KineStack', {
+  loadBalancerServiceBase,
+  capacityProvider,
+  pgBouncerEnv: PGBOUNCER_ENV,
 });
 
 new K3sApiStack(serviceStack, 'K3sApiStack', {

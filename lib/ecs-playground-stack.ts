@@ -73,6 +73,7 @@ class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase 
     const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.securityGroups.length}`, {
       vpc,
       disableInlineRules: true,
+      allowAllIpv6Outbound: true,
     });
     this.securityGroups.push(securityGroup);
     return securityGroup;
@@ -243,10 +244,9 @@ user-data = ""`);
       name: 'com.amazonaws.global.cloudfront.origin-facing',
     });
     autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
-    autoScalingGroup.connections.allowFrom(Peer.prefixList(prefixListId), Port.tcp(80)); // Temp
     loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
-    loadBalancedService.loadBalancer.connections
-      .allowFrom(Peer.prefixList(prefixListId), Port.tcp(listener.port));
+    loadBalancedService.loadBalancer.connections.allowTo(Peer.anyIpv4(), Port.tcp(6080)); // Temp
+    loadBalancedService.loadBalancer.connections.allowFrom(Peer.anyIpv4(), Port.tcp(6443)); // Temp
     loadBalancedService.loadBalancer.connections
       .allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
 
