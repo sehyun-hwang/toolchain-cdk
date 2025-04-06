@@ -29,14 +29,14 @@
     npm-global-src,
   }: let
     system = "aarch64-linux";
-    pkgs = import nixpkgs {
+    pkgs = import nixpkgs { inherit system;};
+    unstable-pkgs = import nixpkgs-unstable {
       inherit system;
-      config.allowUnfree = true;
+    config.allowUnfree = true;
       config.permittedInsecurePackages = [
         "openssl-1.1.1w"
       ];
     };
-    unstable-pkgs = import nixpkgs-unstable {inherit system;};
     nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
 
     nodejs-global-bin = pkgs.buildNpmPackage {
@@ -124,6 +124,7 @@
         act
         alejandra
         black
+        cargo
         corepack_22
         dive
         gnumake
@@ -134,10 +135,13 @@
         nil
         nixos-rebuild
         nodejs_22
+        openssl.dev
         otpw
         oxlint
         postgresql
         ruff
+        rustc
+        rustfmt
         shellcheck
         shfmt
         stylelint
@@ -149,7 +153,7 @@
         nerdctl-pkgs.nerdctl
         unstable-pkgs.atuin
         unstable-pkgs.hugo
-        unstable-pkgs.pulumi-bin
+        unstable-pkgs.terraform
 
         containerd-rootless-setuptool
         copilot-cli-fix.packages.${system}.default
@@ -157,12 +161,12 @@
         vscode-cli
         docker-buildx-desktop
       ]
-      ++ [
-        pkgs.nodePackages.prettier
-
-        unstable-pkgs.nodePackages.eslint
-        unstable-pkgs.nodePackages.aws-cdk
-      ]
+      ++ (with unstable-pkgs.nodePackages; [
+        aws-cdk
+        cdktf-cli
+        eslint
+        prettier
+      ])
       ++ [
         (pkgs.python312.withPackages
           (p: [
@@ -209,7 +213,7 @@
 
             home.packages =
               packages
-              ++ (with pkgs; [
+              ++ (with unstable-pkgs; [
                 sublime4
               ]);
 
