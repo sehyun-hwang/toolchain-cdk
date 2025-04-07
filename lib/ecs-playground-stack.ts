@@ -1,5 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
+import assert from 'node:assert/strict';
+
 import {
   AutoScalingGroup, BlockDeviceVolume, EbsDeviceVolumeType, GroupMetrics,
   Monitoring,
@@ -11,6 +13,7 @@ import {
 import { HttpOrigin, VpcOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Alarm, ComparisonOperator } from 'aws-cdk-lib/aws-cloudwatch';
 import {
+  Connections,
   InstanceArchitecture, InstanceClass, InstanceSize, InstanceType,
   type IPrefixList, type IVpc,
   Peer, Port, PrefixList, SecurityGroup, Vpc,
@@ -66,16 +69,14 @@ export class AwsManagedPrefixList extends Construct {
 }
 
 class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase {
-  securityGroups: SecurityGroup[] = [];
-
   pushSecurityGroup() {
     const { vpc } = this.cluster;
-    const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.securityGroups.length}`, {
+    const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.loadBalancer.connections.securityGroups.length.toString()}`, {
       vpc,
       disableInlineRules: true,
       allowAllIpv6Outbound: true,
     });
-    this.securityGroups.push(securityGroup);
+    this.loadBalancer.connections.addSecurityGroup(securityGroup);
     return securityGroup;
   }
 }
@@ -243,12 +244,15 @@ user-data = ""`);
     const { prefixList: { prefixListId } } = new AwsManagedPrefixList(this, 'CloudFrontPrefixList', {
       name: 'com.amazonaws.global.cloudfront.origin-facing',
     });
-    autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
-    loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
-    loadBalancedService.loadBalancer.connections.allowTo(Peer.anyIpv4(), Port.tcp(6080)); // Temp
-    loadBalancedService.loadBalancer.connections.allowFrom(Peer.anyIpv4(), Port.tcp(6443)); // Temp
-    loadBalancedService.loadBalancer.connections
-      .allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
+    const [loadBalancerDefaultSecurityGroup] = loadBalancedService.loadBalancer
+      .connections.securityGroups;
+    assert(loadBalancerDefaultSecurityGroup);
+    const loadBalancerConnection = new Connections({
+      securityGroups: [loadBalancerDefaultSecurityGroup],
+    });
+    autoScalingGroup.connections.allowFrom(loadBalancerConnection, Port.allTcp());
+    loadBalancerConnection.allowFrom(autoScalingGroup, Port.allTcp());
+    loadBalancerConnection.allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
 
     const distribution = new Distribution(this, 'Distribution-2', {
       defaultBehavior: {

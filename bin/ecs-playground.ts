@@ -118,6 +118,7 @@ new TailscaleStack(serviceStack, 'TailscaleStack', {
 
 new KineStack(serviceStack, 'KineStack', {
   loadBalancerServiceBase,
+  securityGroup: loadBalancerServiceBase.pushSecurityGroup(),
   capacityProvider,
   pgBouncerEnv: PGBOUNCER_ENV,
 });

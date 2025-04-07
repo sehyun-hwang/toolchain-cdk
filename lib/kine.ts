@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
-import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { Peer, Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import {
   type AsgCapacityProvider,
@@ -8,15 +9,16 @@ import {
   NetworkMode,
 } from 'aws-cdk-lib/aws-ecs';
 import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
-import { ApplicationLoadBalancer } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationProtocolVersion } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { DatabaseInstance } from 'aws-cdk-lib/aws-rds';
 import * as cdk from 'aws-cdk-lib/core';
 
 import type { NestedServiceStackProps } from './base';
 import NestedServiceStack from './base';
 
-interface K3sApiStackProps extends NestedServiceStackProps {
+interface KineStackProps extends NestedServiceStackProps {
   capacityProvider: AsgCapacityProvider;
+  securityGroup: SecurityGroup,
   pgBouncerEnv: {
     DB_HOST: string;
     DB_USER: string;
@@ -28,7 +30,7 @@ interface K3sApiStackProps extends NestedServiceStackProps {
 export default class KineStack extends NestedServiceStack {
   service: Ec2Service;
 
-  constructor(scope: cdk.Stack, id: string, props: K3sApiStackProps) {
+  constructor(scope: cdk.Stack, id: string, props: KineStackProps) {
     super(scope, id, {
       ...props,
       networkMode: NetworkMode.AWS_VPC,
@@ -36,6 +38,7 @@ export default class KineStack extends NestedServiceStack {
     const {
       loadBalancerServiceBase: { cluster },
       pgBouncerEnv,
+      securityGroup,
     } = props;
 
     const repository = Repository.fromRepositoryArn(this, 'Repository', 'arn:aws:ecr:ap-northeast-1:248837585826:repository/c8d557/iam-pgbouncer');
@@ -60,6 +63,15 @@ export default class KineStack extends NestedServiceStack {
 
     // enableRestartPolicy: true,
     // restartAttemptPeriod: cdk.Duration.hours(1),
+    taskDefinition.addContainer('nginx', {
+      memoryLimitMiB: 32,
+      logging: this.logDriver,
+      image: ContainerImage.fromAsset('kine-nginx'),
+      portMappings: [
+        { containerPort: 80 },
+      ],
+    });
+
     const kineContainer = taskDefinition.addContainer('kine', {
       memoryLimitMiB: 50,
       logging: this.logDriver,
@@ -68,11 +80,6 @@ export default class KineStack extends NestedServiceStack {
         '--datastore-max-idle-connections', '10',
         '--datastore-max-open-connections', '20',
         '--endpoint', `postgres://${pgBouncerEnv.DB_USER}@localhost:6432/${pgBouncerEnv.DB_NAME}`,
-        '--listen-address', '0.0.0.0:80',
-      ],
-      portMappings: [
-        { containerPort: 2379 },
-        { containerPort: 8080 },
       ],
     });
 
@@ -99,8 +106,6 @@ export default class KineStack extends NestedServiceStack {
     });
 
     const { vpc } = cluster;
-    const [securityGroup] = props.loadBalancerServiceBase.loadBalancer.connections.securityGroups;
-    assert(securityGroup);
     const loadBalancer = ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(this, 'LoadBalancer', {
       vpc,
       loadBalancerArn: props.loadBalancerServiceBase.loadBalancer.loadBalancerArn,
@@ -108,6 +113,12 @@ export default class KineStack extends NestedServiceStack {
       loadBalancerDnsName: props.loadBalancerServiceBase.loadBalancer.loadBalancerDnsName,
     });
 
+    /** @link https://gist.github.com/riandyrn/049eaab390f604eae4bf2dfcc50fbab7 */
+    const certificate = Certificate.fromCertificateArn(
+      this,
+      'Certificate',
+      'arn:aws:acm:ap-northeast-1:248837585826:certificate/81f4f190-c977-48e3-819b-930a0c30405b',
+    );
     const { service, targetGroup } = new ApplicationLoadBalancedEc2Service(this, 'Service', {
       cluster,
       taskDefinition,
@@ -118,10 +129,12 @@ export default class KineStack extends NestedServiceStack {
       }],
       loadBalancer,
       listenerPort: 2379,
+      protocol: ApplicationProtocol.HTTPS,
+      protocolVersion: ApplicationProtocolVersion.HTTP2,
+      certificate,
     });
     this.service = service;
     targetGroup.configureHealthCheck({
-      port: '8080',
       path: '/metrics',
     });
 
@@ -130,9 +143,6 @@ export default class KineStack extends NestedServiceStack {
       allowAllIpv6Outbound: true,
     });
     service.connections.addSecurityGroup(ipv6SecurityGroup);
-    service.connections.allowFrom(
-      props.loadBalancerServiceBase.loadBalancer.connections,
-      Port.tcp(8080),
-    );
+    service.connections.allowFrom(Peer.anyIpv4(), Port.tcp(8080));
   }
 }

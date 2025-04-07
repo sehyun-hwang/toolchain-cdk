@@ -16,7 +16,6 @@ export class ChatBotStack extends cdk.Stack {
 
     const topic = new Topic(this, 'Topic');
     const deadLetterQueue = new Queue(this, 'DeadLetterQueue');
-
     topic.addSubscription(new UrlSubscription('https://global.sns-api.chatbot.amazonaws.com', {
       deadLetterQueue,
     }));

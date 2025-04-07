@@ -34,6 +34,7 @@ function flattenObject(obj: any, prefix = ''): Record<string, boolean | number |
   return result;
 }
 
+// TODO FE and BE to nested satack
 export default class End2EndPasswordlessExampleStack extends cdk.Stack {
   passwordless: Passwordless;
 
