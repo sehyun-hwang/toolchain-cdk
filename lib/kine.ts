@@ -15,12 +15,6 @@ import NestedServiceStack from './base';
 interface KineStackProps extends NestedServiceStackProps {
   capacityProvider: AsgCapacityProvider;
   securityGroup: SecurityGroup,
-  pgBouncerEnv: {
-    DB_HOST: string;
-    DB_USER: string;
-    DB_NAME: string;
-    DB_CA_BUNDLE: string;
-  };
 }
 
 export default class KineStack extends NestedServiceStack {
@@ -34,16 +28,18 @@ export default class KineStack extends NestedServiceStack {
     } = props;
 
     const { taskDefinition } = this;
-    taskDefinition.addContainer('nginx', {
+    const nginxContainer = taskDefinition.addContainer('nginx', {
       memoryLimitMiB: 32,
       logging: this.logDriver,
       image: ContainerImage.fromAsset('kine-nginx'),
       portMappings: [
         { containerPort: 80 },
       ],
+      healthCheck: {
+        command: ['grpcurl', '-plaintext', '127.0.0.1:80', 'grpc.health.v1.Health/Check'],
+      },
     });
-
-    taskDefinition.addContainer('kine', {
+    const kineContainer = taskDefinition.addContainer('kine', {
       memoryLimitMiB: 64,
       logging: this.logDriver,
       image: ContainerImage.fromRegistry('rancher/kine'),
@@ -55,7 +51,11 @@ exec kine \
   --datastore-max-open-connections 20 \
   --endpoint "nats://$(ip route | awk '/^default/ {print $3}')?replicas=3&noEmbed=true"`,
       ],
+      healthCheck: {
+        command: ['wget', '--spider', '-q', 'http://127.0.0.1:8080/metrics'],
+      },
     });
+    nginxContainer.addLink(kineContainer);
 
     const { vpc } = cluster;
     const loadBalancer = ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(this, 'LoadBalancer', {

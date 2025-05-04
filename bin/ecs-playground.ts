@@ -136,7 +136,6 @@ const kineStack = new KineStack(serviceStack, 'KineStack', {
   loadBalancerServiceBase,
   securityGroup: loadBalancerServiceBase.pushSecurityGroup(),
   capacityProvider,
-  pgBouncerEnv: PGBOUNCER_ENV,
 });
 kineStack.addDependency(natsSeedStack);
 
