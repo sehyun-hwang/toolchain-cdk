@@ -87,6 +87,8 @@ class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase 
 export default class HelloEcsStack extends cdk.Stack {
   vpc: IVpc;
 
+  autoScalingGroup: AutoScalingGroup;
+
   loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
 
   distributionDomainNameImport: string;
@@ -131,6 +133,8 @@ export default class HelloEcsStack extends cdk.Stack {
         }),
       }],
     });
+    //cat <$(echo -ne 'PUT /latest/api/token HTTP/1.0\r\nHost: 169.254.169.254\r\nAws-Ec2-Metadata-Token-Ttl-Seconds: 21600\r\n') - | nc 169.254.169.254 80
+    this.autoScalingGroup = autoScalingGroup;
     autoScalingGroup.addUserData(`[settings.bootstrap-containers.bear]
 source = "public.ecr.aws/bottlerocket/bottlerocket-bootstrap:v0.1.0"
 mode = "once"

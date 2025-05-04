@@ -5,6 +5,8 @@ import type * as cdk from 'aws-cdk-lib/core';
 import NestedServiceStack, { type NestedServiceStackProps } from './base';
 
 export default class SimpleReverseProxyNestedStack extends NestedServiceStack {
+  service: Ec2Service;
+
   constructor(scope: cdk.Stack, id: string, props: NestedServiceStackProps) {
     super(scope, id, props);
     const { loadBalancerServiceBase } = props;
@@ -28,7 +30,7 @@ export default class SimpleReverseProxyNestedStack extends NestedServiceStack {
     });
 
     const { cluster } = loadBalancerServiceBase;
-    new Ec2Service(this, 'Service', {
+    this.service = new Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
       desiredCount: 1,

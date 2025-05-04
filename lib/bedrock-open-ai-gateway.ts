@@ -1,3 +1,5 @@
+import assert from 'assert/strict';
+
 import { SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import {
@@ -69,8 +71,7 @@ export default class BedrockOpenAiGatewayStack extends cdk.Stack {
 
     const { securityGroupId } = loadBalancerServiceBase.loadBalancer.connections
       .securityGroups.at(0) || {};
-    if (!securityGroupId)
-      throw new Error('loadBalancerServiceBase.loadBalancer has no security group');
+    assert(securityGroupId);
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListener', {
       listenerArn: loadBalancerServiceBase.listener.listenerArn,
       securityGroup: SecurityGroup.fromSecurityGroupId(this, 'LoadBalancerSecurityGroup', securityGroupId),

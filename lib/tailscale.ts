@@ -1,4 +1,4 @@
-import { Ec2Service } from 'aws-cdk-lib/aws-ecs';
+import { AvailabilityZoneRebalancing, Ec2Service } from 'aws-cdk-lib/aws-ecs';
 import type * as cdk from 'aws-cdk-lib/core';
 
 import NestedServiceStack, { type NestedServiceStackProps } from './base';
@@ -15,6 +15,7 @@ export default class TailscaleStack extends NestedServiceStack {
       cluster,
       taskDefinition,
       desiredCount: 1,
+      availabilityZoneRebalancing: AvailabilityZoneRebalancing.ENABLED,
       capacityProviderStrategies: [{
         capacityProvider: props.capacityProvider.capacityProviderName,
         weight: 1,

@@ -43,7 +43,7 @@ export default abstract class NestedServiceStack extends cdk.NestedStack {
     });
 
     this.taskDefinition.addContainer('tailscale', {
-      memoryLimitMiB: 50,
+      memoryLimitMiB: 96,
       logging: new AwsLogDriver({ streamPrefix: this.node.id }),
       image: ContainerImage.fromRegistry('tailscale/tailscale'),
       secrets: {

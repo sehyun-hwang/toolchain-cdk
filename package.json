@@ -26,7 +26,7 @@
         "@aws-solutions-constructs/aws-eventbridge-sns": "^2.78.0",
         "@aws-solutions-constructs/aws-eventbridge-stepfunctions": "^2.79.0",
         "amazon-cognito-passwordless-auth": "^0.15.0",
-        "aws-cdk-lib": "2.182.0",
+        "aws-cdk-lib": "2.194.0",
         "constructs": "^10.4.2"
     },
     "type": "module"

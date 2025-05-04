@@ -7,6 +7,8 @@ import CloudFlaredStack from '../lib/cloudflared';
 import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import K3sApiStack from '../lib/k3s-api';
 import KineStack from '../lib/kine';
+import NatsJetStreamStack from '../lib/nats-jetstream';
+import NatsSeedStack from '../lib/nats-seed';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
 import SimpleReverseProxyNestedStack from '../lib/simple-reverse-proxy';
@@ -38,8 +40,9 @@ const PGBOUNCER_ENV = {
 };
 
 const {
-  loadBalancerServiceBase,
   vpc,
+  autoScalingGroup,
+  loadBalancerServiceBase,
   distributionDomainNameImport,
   capacityProvider,
 } = new EcsPlaygroundStack(app, 'EcsPlaygroundStack', {
@@ -116,12 +119,26 @@ new TailscaleStack(serviceStack, 'TailscaleStack', {
   capacityProvider,
 });
 
-new KineStack(serviceStack, 'KineStack', {
+const natsSeedStack = new NatsSeedStack(serviceStack, 'NatsSeedStack', {
+  loadBalancerServiceBase,
+  capacityProvider,
+  autoScalingGroup,
+});
+
+const natsJetStreamStack = new NatsJetStreamStack(serviceStack, 'NatsJetStreamStack', {
+  loadBalancerServiceBase,
+  capacityProvider,
+  autoScalingGroup,
+});
+natsJetStreamStack.addDependency(natsSeedStack);
+
+const kineStack = new KineStack(serviceStack, 'KineStack', {
   loadBalancerServiceBase,
   securityGroup: loadBalancerServiceBase.pushSecurityGroup(),
   capacityProvider,
   pgBouncerEnv: PGBOUNCER_ENV,
 });
+kineStack.addDependency(natsSeedStack);
 
 new K3sApiStack(serviceStack, 'K3sApiStack', {
   loadBalancerServiceBase,
