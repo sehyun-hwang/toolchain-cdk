@@ -1,11 +1,20 @@
 /* eslint-disable max-classes-per-file */
-import { ContainerImage, Ec2Service, Secret } from 'aws-cdk-lib/aws-ecs';
+import { Ec2Service, Secret } from 'aws-cdk-lib/aws-ecs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import type * as cdk from 'aws-cdk-lib/core';
 
 import NestedServiceStack, { type NestedServiceStackProps } from './base';
+import { natsContainerOptions } from './nats-jetstream';
+import { NATS_SERVER_CONFIG } from './nats-seed';
 
-export default class NatsSeedNestedStack extends NestedServiceStack {
+const leafNodeConfig = `leafnodes {
+  remotes = [{
+    url: tls://connect.ngs.global
+    credentials: /tmp/leaf.creds
+  }]
+}`;
+
+export default class NatsLeefStack extends NestedServiceStack {
   service: Ec2Service;
 
   constructor(scope: cdk.Stack, id: string, props: NestedServiceStackProps) {
@@ -17,34 +26,23 @@ export default class NatsSeedNestedStack extends NestedServiceStack {
     });
 
     const { taskDefinition, logDriver } = this;
-    taskDefinition.addContainer('nats', {
-      memoryLimitMiB: 32,
+    const container = taskDefinition.addContainer('nats', {
+      ...natsContainerOptions,
+      command: [`set -ex
+echo "$SYNADIA_CREDS" > /tmp/leaf.creds
+        ` + natsContainerOptions.command[0]],
       logging: logDriver,
-      image: ContainerImage.fromRegistry('nats:alpine'),
       secrets: {
         SYNADIA_CREDS: Secret.fromSsmParameter(synadiaCredsParameter),
       },
-      environment: {
-        NATS_SERVER_CONFIG: `http_port: 8222
-server_name: $HOSTNAME
-
-cluster {
-  name: default
-  listen: 0.0.0.0:6222
-  routes: [
-    %s
-  ]
-}`,
-      },
-      entryPoint: ['sh', '-c', 'printf "$SYNADIA_CREDS" > /tmp/synadia-creds.txt && echo "$NATS_SERVER_CONFIG" > /tmp/nats-server.conf && exec $@'],
-      command: ['nats-server', '-c', '/tmp/nats-server.conf'],
     });
+    container.addEnvironment('NATS_SERVER_CONFIG', NATS_SERVER_CONFIG + '\n' + leafNodeConfig);
+    container.addEnvironment('SERVER_TAG', 'az:null');
 
     const { cluster } = loadBalancerServiceBase;
     this.service = new Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
-      daemon: true,
     });
   }
 }

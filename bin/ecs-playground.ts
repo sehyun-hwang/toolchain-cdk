@@ -8,6 +8,7 @@ import EcsPlaygroundStack from '../lib/ecs-playground-stack';
 import K3sApiStack from '../lib/k3s-api';
 import KineStack from '../lib/kine';
 import NatsJetStreamStack from '../lib/nats-jetstream';
+import NatsLeefStack from '../lib/nats-leaf';
 import NatsSeedStack from '../lib/nats-seed';
 import End2EndPasswordlessExampleStack from '../lib/passwordless';
 import PasswordlessFrontendStack from '../lib/passwordless-frontend';
@@ -42,6 +43,7 @@ const PGBOUNCER_ENV = {
 const {
   vpc,
   autoScalingGroup,
+  natsSecurityGroup,
   loadBalancerServiceBase,
   distributionDomainNameImport,
   capacityProvider,
@@ -129,15 +131,23 @@ const natsJetStreamStack = new NatsJetStreamStack(serviceStack, 'NatsJetStreamSt
   loadBalancerServiceBase,
   capacityProvider,
   autoScalingGroup,
+  natsSecurityGroup,
 });
 natsJetStreamStack.addDependency(natsSeedStack);
+
+const natsLeefStack = new NatsLeefStack(serviceStack, 'NatsLeefStack', {
+  loadBalancerServiceBase,
+  capacityProvider,
+});
+natsLeefStack.addDependency(natsSeedStack);
 
 const kineStack = new KineStack(serviceStack, 'KineStack', {
   loadBalancerServiceBase,
   securityGroup: loadBalancerServiceBase.pushSecurityGroup(),
   capacityProvider,
 });
-kineStack.addDependency(natsSeedStack);
+kineStack.addDependency(natsJetStreamStack);
+kineStack.addDependency(natsLeefStack);
 
 new K3sApiStack(serviceStack, 'K3sApiStack', {
   loadBalancerServiceBase,

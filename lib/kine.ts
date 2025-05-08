@@ -44,12 +44,11 @@ export default class KineStack extends NestedServiceStack {
       logging: this.logDriver,
       image: ContainerImage.fromRegistry('rancher/kine'),
       entryPoint: ['sh', '-c'],
-      command: [
-        `set -eux
+      command: [`set -eux
 exec kine \
   --datastore-max-idle-connections 10 \
   --datastore-max-open-connections 20 \
-  --endpoint "nats://$(ip route | awk '/^default/ {print $3}')?replicas=3&noEmbed=true"`,
+  --endpoint "nats://kine:kine@$(ip route | awk '/^default/ {print $3}')?replicas=3&noEmbed=true"`,
       ],
       healthCheck: {
         command: ['wget', '--spider', '-q', 'http://127.0.0.1:8080/metrics'],

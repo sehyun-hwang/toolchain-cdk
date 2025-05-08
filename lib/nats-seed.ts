@@ -13,15 +13,43 @@ import NestedServiceStack, { type NestedServiceStackProps } from './base';
 export const NATS_SERVER_CONFIG = `http_port: 8222
 http_base_path: /nats
 
+server_tags: [
+  cloud:aws
+  $SERVER_TAG
+]
+
+jetstream: {
+  enable: %s
+  unique_tag: az
+}
+
 cluster {
   name: default
   host: %s
   port: 6222
-  connect_retries: 60
   routes: [
     %s
   ]
-}`;
+}
+
+accounts {
+  SYS {
+    users: [{
+      user: sys
+      pass: sys
+    }]
+  }
+  kine {
+    jetstream {}
+    users: [{
+      user: kine
+      pass: kine
+    }]
+  }
+}
+
+system_account: SYS
+no_auth_user: sys`;
 
 interface NatsSeedStackProps extends NestedServiceStackProps {
   autoScalingGroup: AutoScalingGroup;
@@ -71,7 +99,7 @@ CLUSTER_ROUTES=$(aws ec2 describe-instances \
   --output text \
   |  awk '{ print "nats://"$0":6222" }')
 
-printf "$NATS_SERVER_CONFIG" "$HOST_IP" "$CLUSTER_ROUTES" \
+printf "$NATS_SERVER_CONFIG" false "$HOST_IP" "$CLUSTER_ROUTES" \
   | tee ${natsServerConfPath}`,
       ],
     });
@@ -80,6 +108,9 @@ printf "$NATS_SERVER_CONFIG" "$HOST_IP" "$CLUSTER_ROUTES" \
       memoryLimitMiB: 32,
       logging: logDriver,
       image: ContainerImage.fromRegistry('nats'),
+      environment: {
+        SERVER_TAG: 'az:null',
+      },
       command: ['-c', natsServerConfPath],
     });
 
