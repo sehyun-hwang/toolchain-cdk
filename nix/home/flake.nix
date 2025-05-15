@@ -29,10 +29,10 @@
     npm-global-src,
   }: let
     system = "aarch64-linux";
-    pkgs = import nixpkgs { inherit system;};
+    pkgs = import nixpkgs {inherit system;};
     unstable-pkgs = import nixpkgs-unstable {
       inherit system;
-    config.allowUnfree = true;
+      config.allowUnfree = true;
       config.permittedInsecurePackages = [
         "openssl-1.1.1w"
       ];
@@ -123,13 +123,15 @@
       [
         act
         alejandra
+        aws-vault
         black
         cargo
         corepack_22
         dive
         gnumake
         hadolint
-        k3s_1_30
+        k3s_1_31
+        k9s
         kubernetes-helm
         markdownlint-cli2
         nil
@@ -144,8 +146,10 @@
         rustfmt
         shellcheck
         shfmt
+        ssm-session-manager-plugin
         stylelint
         systemctl-tui
+        trino-cli
         typos
         typos-lsp
 
@@ -154,6 +158,7 @@
         unstable-pkgs.atuin
         unstable-pkgs.hugo
         unstable-pkgs.terraform
+        unstable-pkgs.eksctl
 
         containerd-rootless-setuptool
         copilot-cli-fix.packages.${system}.default
