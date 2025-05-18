@@ -33,9 +33,6 @@
     unstable-pkgs = import nixpkgs-unstable {
       inherit system;
       config.allowUnfree = true;
-      config.permittedInsecurePackages = [
-        "openssl-1.1.1w"
-      ];
     };
     nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
 
@@ -50,6 +47,7 @@
       dontNpmBuild = true;
       dontNpmPrune = true;
 
+      nodejs = pkgs.nodejs_22;
       installPhase = ''
         mkdir -p $out/bin
         cp -r * $out/
@@ -104,15 +102,24 @@
       null
       vscode-cli-source-json.products;
 
-    vscode-cli = pkgs.stdenv.mkDerivation {
-      pname = "vscode-cli";
+    vscode-cli2 = pkgs.stdenv.mkDerivation {
+      name = "vscode-cli";
       version = vscode-cli-product.productVersion;
-      src = builtins.fetchurl {
-        url = vscode-cli-product.url;
-        sha256 = vscode-cli-product.sha256hash;
-      };
+      src = (
+        if nixpkgs.lib.strings.hasSuffix ".zip" vscode-cli-product.url
+        then
+          pkgs.fetchzip {
+            url = vscode-cli-product.url;
+            sha256 = "sha256-soW2o1dWEYOz3OdjBMCXpb5Yjxg/gmYQ/BOOXj2GE14=";
+          }
+        else
+          pkgs.fetchzip {
+            url = vscode-cli-product.url;
+            sha256 = vscode-cli-product.sha256hash;
+          }
+      );
 
-      sourceRoot = ".";
+      # sourceRoot = "."
       installPhase = ''
         ./code --version
         install -Dvt $out/bin code
@@ -121,6 +128,7 @@
 
     packages = with pkgs;
       [
+        # Stable
         act
         alejandra
         aws-vault
@@ -130,7 +138,6 @@
         dive
         gnumake
         hadolint
-        k3s_1_31
         k9s
         kubernetes-helm
         markdownlint-cli2
@@ -138,7 +145,6 @@
         nixos-rebuild
         nodejs_22
         openssl.dev
-        otpw
         oxlint
         postgresql
         ruff
@@ -153,22 +159,31 @@
         typos
         typos-lsp
 
-        (lib.hiPrio unstable-pkgs.containerd)
-        nerdctl-pkgs.nerdctl
+        # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.hugo
         unstable-pkgs.terraform
         unstable-pkgs.eksctl
 
-        containerd-rootless-setuptool
+        # Custom
         copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
-        vscode-cli
-        docker-buildx-desktop
+        vscode-cli2
       ]
+      ++ (
+        if pkgs.stdenv.isLinux
+        then [
+          k3s_1_31
+          (lib.hiPrio unstable-pkgs.containerd)
+          nerdctl-pkgs.nerdctl
+          containerd-rootless-setuptool
+          docker-buildx-desktop
+        ]
+        else []
+      )
       ++ (with unstable-pkgs.nodePackages; [
         aws-cdk
-        cdktf-cli
+        pkgs.nodePackages.cdktf-cli
         eslint
         prettier
       ])
@@ -218,8 +233,8 @@
 
             home.packages =
               packages
-              ++ (with unstable-pkgs; [
-                sublime4
+              ++ (with pkgs; [
+                lapce
               ]);
 
             xdg.configFile = {
