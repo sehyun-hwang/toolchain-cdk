@@ -11,7 +11,6 @@
         "github.vscode-pull-request-github",
         "jnoortheen.nix-ide",
         "ms-azuretools.vscode-containers",
-        "ms-python.black-formatter",
         "ms-python.python",
         "raynigon.nginx-formatter",
         "redhat.vscode-yaml",
