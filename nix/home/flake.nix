@@ -1,9 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
-    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -28,14 +28,14 @@
     flake-utils,
     npm-global-src,
   }: let
-    system = "aarch64-linux";
-    pkgs = import nixpkgs { inherit system;};
+    system = (import ./config.nix).system;
+    username = (import ./config.nix).username;
+    homeDirectory = (import ./config.nix).homeDirectory;
+
+    pkgs = import nixpkgs {inherit system;};
     unstable-pkgs = import nixpkgs-unstable {
       inherit system;
-    config.allowUnfree = true;
-      config.permittedInsecurePackages = [
-        "openssl-1.1.1w"
-      ];
+      config.allowUnfree = true;
     };
     nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
 
@@ -50,11 +50,12 @@
       dontNpmBuild = true;
       dontNpmPrune = true;
 
+      nodejs = pkgs.nodejs_22;
       installPhase = ''
-        mkdir -p $out/bin
-        cp -r * $out/
+        mkdir -p $out/lib $out/bin
+        cp -r * $out/lib/
         for file in node_modules/.bin/*; do
-          ln -s $out/node_modules/.bin/$(basename $file) $out/bin/$(basename $file)
+          ln -s $out/lib/node_modules/.bin/$(basename $file) $out/bin/$(basename $file)
         done
       '';
     };
@@ -105,9 +106,10 @@
       vscode-cli-source-json.products;
 
     vscode-cli = pkgs.stdenv.mkDerivation {
-      pname = "vscode-cli";
+      name = "vscode-cli";
       version = vscode-cli-product.productVersion;
-      src = builtins.fetchurl {
+      nativeBuildInputs = [pkgs.unzip];
+      src = pkgs.fetchurl {
         url = vscode-cli-product.url;
         sha256 = vscode-cli-product.sha256hash;
       };
@@ -121,59 +123,79 @@
 
     packages = with pkgs;
       [
+        # Stable
         act
         alejandra
+        asciinema
+        aws-vault
         black
         cargo
         corepack_22
         dive
+        eslint
+        gitleaks
         gnumake
         hadolint
-        k3s_1_30
+        infisical
+        jq
         kubernetes-helm
         markdownlint-cli2
+        minio-client
         nil
         nixos-rebuild
-        nodejs_22
+        nodejs_24
         openssl.dev
-        otpw
         oxlint
         postgresql
+        pre-commit
         ruff
         rustc
         rustfmt
         shellcheck
         shfmt
+        skopeo
+        ssm-session-manager-plugin
         stylelint
         systemctl-tui
+        tailscale
+        trino-cli
         typos
         typos-lsp
+        yq
 
-        (lib.hiPrio unstable-pkgs.containerd)
-        nerdctl-pkgs.nerdctl
+        # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.hugo
         unstable-pkgs.terraform
 
-        containerd-rootless-setuptool
+        # Custom
         copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
-        docker-buildx-desktop
       ]
+      ++ (
+        if pkgs.stdenv.isLinux
+        then [
+          k3s_1_31
+          (lib.hiPrio unstable-pkgs.containerd)
+          nerdctl-pkgs.nerdctl
+          containerd-rootless-setuptool
+          docker-buildx-desktop
+        ]
+        else []
+      )
       ++ (with unstable-pkgs.nodePackages; [
         aws-cdk
-        cdktf-cli
-        eslint
+        # cdktf-cli
         prettier
       ])
       ++ [
-        (pkgs.python312.withPackages
+        (pkgs.python311.withPackages
           (p: [
             "aws-shell"
           ]))
       ]
-      ++ (with python312Packages; [
+      ++ (with python311Packages; [
         pip
       ]);
 
@@ -195,14 +217,14 @@
   in (
     {
       # https://github.com/nix-community/home-manager/blob/ba4a1a110204c27805d1a1b5c8b24b3a0da4d063/templates/standalone/flake.nix
-      homeConfigurations."hwanghyun3" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations.${username} = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         modules = [
           {
-            home.stateVersion = "24.11";
-            home.username = "hwanghyun3";
-            home.homeDirectory = "/home/hwanghyun3";
+            home.stateVersion = "25.05";
+            home.username = username;
+            home.homeDirectory = homeDirectory;
 
             nix.package = pkgs.nix;
             nix.settings = {
@@ -213,8 +235,8 @@
 
             home.packages =
               packages
-              ++ (with unstable-pkgs; [
-                sublime4
+              ++ (with pkgs; [
+                lapce
               ]);
 
             xdg.configFile = {
@@ -229,7 +251,7 @@
 
       homeManagerModules.default = {...}:
         {
-          home.stateVersion = "24.11";
+          home.stateVersion = "25.05";
           home.packages = packages;
         }
         // programs;
