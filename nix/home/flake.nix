@@ -108,21 +108,13 @@
     vscode-cli = pkgs.stdenv.mkDerivation {
       name = "vscode-cli";
       version = vscode-cli-product.productVersion;
-      src = (
-        if nixpkgs.lib.strings.hasSuffix ".zip" vscode-cli-product.url
-        then
-          pkgs.fetchzip {
-            url = vscode-cli-product.url;
-            sha256 = "sha256-soW2o1dWEYOz3OdjBMCXpb5Yjxg/gmYQ/BOOXj2GE14=";
-          }
-        else
-          pkgs.fetchzip {
-            url = vscode-cli-product.url;
-            sha256 = vscode-cli-product.sha256hash;
-          }
-      );
+      nativeBuildInputs = [pkgs.unzip];
+      src = pkgs.fetchurl {
+        url = vscode-cli-product.url;
+        sha256 = vscode-cli-product.sha256hash;
+      };
 
-      # sourceRoot = "."
+      sourceRoot = ".";
       installPhase = ''
         ./code --version
         install -Dvt $out/bin code
@@ -134,17 +126,21 @@
         # Stable
         act
         alejandra
+        asciinema
         aws-vault
         black
         cargo
         corepack_22
         dive
         eslint
+        gitleaks
         gnumake
         hadolint
-        k9s
+        infisical
+        jq
         kubernetes-helm
         markdownlint-cli2
+        minio-client
         nil
         nixos-rebuild
         nodejs_24
@@ -157,18 +153,20 @@
         rustfmt
         shellcheck
         shfmt
+        skopeo
         ssm-session-manager-plugin
         stylelint
         systemctl-tui
+        tailscale
         trino-cli
         typos
         typos-lsp
+        yq
 
         # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.hugo
         unstable-pkgs.terraform
-        unstable-pkgs.eksctl
 
         # Custom
         copilot-cli-fix.packages.${system}.default

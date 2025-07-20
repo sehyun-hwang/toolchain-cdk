@@ -17,7 +17,7 @@ nix run --extra-experimental-features 'nix-command flakes' home-manager -- switc
 # Without substitution
 home-manager switch --flake .
 # With substitution
-home-manager switch --flake . --option extra-substituters 's3://nix-cache?scheme=http&endpoint=127.0.0.1:9000' --option post-build-hook $PWD/upload-to-cache.sh
+home-manager switch --flake . --option extra-substituters 's3://nix-cache20250622060138522200000002?scheme=http&endpoint=erin-hwang-mac:9000' --option post-build-hook $PWD/upload-to-cache.sh
 ```
 
 Nix shell
