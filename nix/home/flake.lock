@@ -184,7 +184,7 @@
     "vscode-cli-json-path": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Gpw5nve/lwhsErx2Fh6zkQaTcawd8Fl7+hZ5WLGT8OA=",
+        "narHash": "sha256-aEqVMk/t3kMuGaGDYU+SdaZ1/EkTrbirQXcc3hCarw0=",
         "type": "file",
         "url": "https://code.visualstudio.com/sha"
       },

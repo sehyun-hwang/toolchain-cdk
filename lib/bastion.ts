@@ -1,7 +1,7 @@
 import assert from 'assert/strict';
 
-import { Port } from 'aws-cdk-lib/aws-ec2';
-import type { IVpc, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
+import type { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Port, SecurityGroup } from 'aws-cdk-lib/aws-ec2';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import {
   ContainerImage, CpuArchitecture, FargateService, FargateTaskDefinition, type ScratchSpace,
@@ -32,6 +32,7 @@ interface BastionStackProps extends cdk.StackProps {
   securityGroup: SecurityGroup;
 }
 
+// TODO FE and BE to nested satack
 export default class BastionStack extends cdk.Stack {
   vpc: IVpc;
 
@@ -110,9 +111,16 @@ export default class BastionStack extends cdk.Stack {
     (taskDefinition.volumes as Volume[]).pop();
 
     // Service
+    const securityGroup = new SecurityGroup(this, 'SecurityGroup', {
+      vpc,
+      allowAllIpv6Outbound: true,
+    });
     const { cluster } = loadBalancerServiceBase;
-    const fargateService = new FargateService(this, 'Service', {
-      securityGroups: [props.securityGroup],
+    const service = new FargateService(this, 'Service', {
+      securityGroups: [
+        // securityGroup, // @TODO Uncomment
+        props.securityGroup,
+      ],
       cluster,
       taskDefinition,
       assignPublicIp: true,
@@ -130,23 +138,18 @@ export default class BastionStack extends cdk.Stack {
     });
 
     // @TODO Refactor from here
-    const securityGroup = loadBalancerServiceBase.loadBalancer.connections
-      .securityGroups.at(0);
-    assert(securityGroup);
-
     const listener = ApplicationListener.fromApplicationListenerAttributes(this, 'ApplicationListner', {
       listenerArn: loadBalancerServiceBase.listener.listenerArn,
-      securityGroup,
+      securityGroup: props.securityGroup,
     });
     const targetGroup = new ApplicationTargetGroup(this, 'TargetGroup', {
-      targets: [fargateService],
+      targets: [service],
       vpc: cluster.vpc,
       protocol: ApplicationProtocol.HTTP,
       // port: 80,
     });
-    fargateService.connections.allowFrom(loadBalancerServiceBase.loadBalancer, Port.tcp(80));
+    service.connections.allowFrom(listener, Port.tcp(80));
     // to here
-    // const { listener } = loadBalancerServiceBase;
 
     listener.addTargetGroups('ListenerRule-Options', {
       targetGroups: [targetGroup],

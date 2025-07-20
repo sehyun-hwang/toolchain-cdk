@@ -1,9 +1,11 @@
+import { EventbridgeToStepfunctions } from '@aws-solutions-constructs/aws-eventbridge-stepfunctions';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import {
   ArnPrincipal, ManagedPolicy, PolicyStatement, Role, StarPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { DefinitionBody, Pass } from 'aws-cdk-lib/aws-stepfunctions';
 import * as cdk from 'aws-cdk-lib/core';
 import type { Construct } from 'constructs';
 
@@ -100,5 +102,20 @@ export default class VsCodeEc2Stack extends cdk.Stack {
       managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
     });
     adminRole.grantPassRole(instance.role);
+
+    const _eventbridgeToStepfunctions = new EventbridgeToStepfunctions(this, 'EventbridgeToStepfunctions', {
+      eventRuleProps: {
+        eventPattern: {
+          source: ['aws.ec2'],
+          detailType: ['EC2 Instance State-change Notification'],
+          detail: {
+            'instance-id': [instance.instanceId],
+          },
+        },
+      },
+      stateMachineProps: {
+        definitionBody: DefinitionBody.fromChainable(new Pass(this, 'Pass')),
+      },
+    });
   }
 }

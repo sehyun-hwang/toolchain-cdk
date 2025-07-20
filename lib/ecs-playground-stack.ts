@@ -1,5 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
+import assert from 'node:assert/strict';
+
 import {
   AutoScalingGroup, BlockDeviceVolume, EbsDeviceVolumeType, GroupMetrics,
   Monitoring,
@@ -11,6 +13,7 @@ import {
 import { HttpOrigin, VpcOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Alarm, ComparisonOperator } from 'aws-cdk-lib/aws-cloudwatch';
 import {
+  Connections,
   InstanceArchitecture, InstanceClass, InstanceSize, InstanceType,
   type IPrefixList, type IVpc,
   Peer, Port, PrefixList, SecurityGroup, Vpc,
@@ -66,15 +69,14 @@ export class AwsManagedPrefixList extends Construct {
 }
 
 class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase {
-  securityGroups: SecurityGroup[] = [];
-
   pushSecurityGroup() {
     const { vpc } = this.cluster;
-    const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.securityGroups.length}`, {
+    const securityGroup = new SecurityGroup(this, `SecurityGroup-${this.loadBalancer.connections.securityGroups.length.toString()}`, {
       vpc,
       disableInlineRules: true,
+      allowAllIpv6Outbound: true,
     });
-    this.securityGroups.push(securityGroup);
+    this.loadBalancer.connections.addSecurityGroup(securityGroup);
     return securityGroup;
   }
 }
@@ -84,6 +86,10 @@ class ApplicationLoadBalancedService extends ApplicationLoadBalancedServiceBase 
  */
 export default class HelloEcsStack extends cdk.Stack {
   vpc: IVpc;
+
+  autoScalingGroup: AutoScalingGroup;
+
+  natsSecurityGroup: SecurityGroup;
 
   loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
 
@@ -129,6 +135,10 @@ export default class HelloEcsStack extends cdk.Stack {
         }),
       }],
     });
+    this.autoScalingGroup = autoScalingGroup;
+    this.natsSecurityGroup = new SecurityGroup(this, 'NatsSecurityGroup', {
+      vpc,
+    });
     autoScalingGroup.addUserData(`[settings.bootstrap-containers.bear]
 source = "public.ecr.aws/bottlerocket/bottlerocket-bootstrap:v0.1.0"
 mode = "once"
@@ -144,41 +154,8 @@ user-data = ""`);
     });
     this.capacityProvider = capacityProvider;
 
-    const cluster = new ecs.Cluster(this, 'Cluster', {
-      vpc,
-      enableFargateCapacityProviders: true,
-      containerInsightsV2: ecs.ContainerInsights.DISABLED,
-    });
-    cluster.addAsgCapacityProvider(capacityProvider);
-    cluster.addDefaultCapacityProviderStrategy([{
-      capacityProvider: capacityProvider.capacityProviderName,
-    }]);
-    new Alarm(this, 'MemoryReservationAlarm', {
-      metric: cluster.metricMemoryReservation({
-        period: cdk.Duration.minutes(1),
-        statistic: 'max',
-      }),
-      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
-      threshold: 50,
-      evaluationPeriods: 2,
-    });
-
-    cluster.addDefaultCloudMapNamespace({
-      name: 'cluster-' + cluster.clusterName,
-    });
-
-    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
-      directory: 'webhook',
-    });
-
-    // const certificate = Certificate.fromCertificateArn(
-    //   this,
-    //   'Certificate',
-    //   'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
-    // );
-
     const loadBalancedService = new ApplicationLoadBalancedService(this, 'Service', {
-      cluster,
+      vpc,
 
       // Internet-facing
       publicLoadBalancer: false,
@@ -202,6 +179,37 @@ user-data = ""`);
       enableECSManagedTags: true,
     });
     this.loadBalancerServiceBase = loadBalancedService;
+
+    const cluster = loadBalancedService.cluster as unknown as ecs.Cluster;
+    cluster.addAsgCapacityProvider(capacityProvider);
+    cluster.addDefaultCapacityProviderStrategy([{
+      capacityProvider: capacityProvider.capacityProviderName,
+    }]);
+    cluster.enableFargateCapacityProviders();
+    const { Ref } = this.resolve(cluster.clusterName);
+    cluster.addDefaultCloudMapNamespace({
+      name: Ref,
+    });
+
+    new Alarm(this, 'MemoryReservationAlarm', {
+      metric: cluster.metricMemoryReservation({
+        period: cdk.Duration.minutes(1),
+        statistic: 'max',
+      }),
+      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+      threshold: 50,
+      evaluationPeriods: 2,
+    });
+
+    const asset = new DockerImageAsset(this, 'StressWebhookImageAsset', {
+      directory: 'webhook',
+    });
+
+    // const certificate = Certificate.fromCertificateArn(
+    //   this,
+    //   'Certificate',
+    //   'arn:aws:acm:ap-northeast-1:248837585826:certificate/f6a51c7c-6e84-4b03-8f17-9dcce8b2d19a',
+    // );
 
     (loadBalancedService.listener.node.defaultChild as cdk.CfnElement)
       .overrideLogicalId('ServiceLBPublicListener46709EAA7B4E02A1Temp');
@@ -244,13 +252,15 @@ user-data = ""`);
     const { prefixList: { prefixListId } } = new AwsManagedPrefixList(this, 'CloudFrontPrefixList', {
       name: 'com.amazonaws.global.cloudfront.origin-facing',
     });
-    autoScalingGroup.connections.allowFrom(loadBalancedService.loadBalancer, Port.allTcp());
-    autoScalingGroup.connections.allowFrom(Peer.prefixList(prefixListId), Port.tcp(80)); // Temp
-    loadBalancedService.loadBalancer.connections.allowFrom(autoScalingGroup, Port.allTcp());
-    loadBalancedService.loadBalancer.connections
-      .allowFrom(Peer.prefixList(prefixListId), Port.tcp(listener.port));
-    loadBalancedService.loadBalancer.connections
-      .allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
+    const [loadBalancerDefaultSecurityGroup] = loadBalancedService.loadBalancer
+      .connections.securityGroups;
+    assert(loadBalancerDefaultSecurityGroup);
+    const loadBalancerConnection = new Connections({
+      securityGroups: [loadBalancerDefaultSecurityGroup],
+    });
+    autoScalingGroup.connections.allowFrom(loadBalancerConnection, Port.allTcp());
+    loadBalancerConnection.allowFrom(autoScalingGroup, Port.allTcp());
+    loadBalancerConnection.allowTo(Peer.prefixList(prefixListId), Port.tcp(listener.port));
 
     const distribution = new Distribution(this, 'Distribution-2', {
       defaultBehavior: {

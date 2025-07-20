@@ -1,21 +1,16 @@
-import { ContainerImage, Ec2Service, Ec2TaskDefinition } from 'aws-cdk-lib/aws-ecs';
-import type { ApplicationLoadBalancedServiceBase } from 'aws-cdk-lib/aws-ecs-patterns';
-import * as cdk from 'aws-cdk-lib/core';
-import type { Construct } from 'constructs';
+/* eslint-disable max-classes-per-file */
+import { ContainerImage, Ec2Service } from 'aws-cdk-lib/aws-ecs';
+import type * as cdk from 'aws-cdk-lib/core';
 
-interface SimpleReverseProxyStackProps extends cdk.StackProps {
-  loadBalancerServiceBase: ApplicationLoadBalancedServiceBase;
-}
+import NestedServiceStack, { type NestedServiceStackProps } from './base';
 
-export default class SimpleReverseProxyStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: SimpleReverseProxyStackProps) {
+export default class SimpleReverseProxyNestedStack extends NestedServiceStack {
+  service: Ec2Service;
+
+  constructor(scope: cdk.Stack, id: string, props: NestedServiceStackProps) {
     super(scope, id, props);
     const { loadBalancerServiceBase } = props;
-
-    const taskDefinition = new Ec2TaskDefinition(this, 'TaskDefinition');
-
-    // @ts-expect-error Protected method
-    const logDriver = loadBalancerServiceBase.createAWSLogDriver(this.node.id);
+    const { taskDefinition, logDriver } = this;
     taskDefinition.addContainer('simple-reverse-proxy', {
       memoryLimitMiB: 32,
       logging: logDriver,
@@ -35,7 +30,7 @@ export default class SimpleReverseProxyStack extends cdk.Stack {
     });
 
     const { cluster } = loadBalancerServiceBase;
-    new Ec2Service(this, 'Service', {
+    this.service = new Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
       desiredCount: 1,
