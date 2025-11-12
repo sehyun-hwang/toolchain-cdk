@@ -44,7 +44,7 @@
       version = "1.0.0";
       src = npm-global-src.outPath;
       npmDepsHash =
-        "sha256-3byY2y3hhkKRLO/XoOJMf1vBEUjeat/Olqm6ZALQMfw="
+        "sha256-faNoOqWfz9OJHC1P9GQfNrrehW+JZMNbg6f97F57g8M="
         # pkgs.lib.fakeHash
         ;
       dontNpmBuild = true;
@@ -129,18 +129,26 @@
         asciinema
         aws-vault
         black
+        biome
         cargo
-        corepack_22
+        cargo-binstall
+        # commitlint
+        corepack_24
         dive
         eslint
+        garage_2
+        git-cliff
         gitleaks
+        glab
         gnumake
         hadolint
         infisical
         jq
         kubernetes-helm
+        kyverno
         markdownlint-cli2
         minio-client
+        mysql-client
         nil
         nixos-rebuild
         nodejs_24
@@ -148,12 +156,15 @@
         oxlint
         postgresql
         pre-commit
+        pyright
+        redis
         ruff
         rustc
         rustfmt
         shellcheck
         shfmt
         skopeo
+        sqlfluff
         ssm-session-manager-plugin
         stylelint
         systemctl-tui
@@ -161,7 +172,7 @@
         trino-cli
         typos
         typos-lsp
-        yq
+        yq-go
 
         # Unstable
         unstable-pkgs.atuin
@@ -176,7 +187,7 @@
       ++ (
         if pkgs.stdenv.isLinux
         then [
-          k3s_1_31
+          k3s_1_34
           (lib.hiPrio unstable-pkgs.containerd)
           nerdctl-pkgs.nerdctl
           containerd-rootless-setuptool
@@ -212,7 +223,7 @@
       programs.lazygit.enable = true;
       programs.poetry.enable = true;
       programs.starship.enable = true;
-      programs.vim.enable = true;
+      # programs.vim.enable = true;
     };
   in (
     {
