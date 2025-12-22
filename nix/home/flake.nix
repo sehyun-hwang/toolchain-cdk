@@ -1,9 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -132,12 +132,13 @@
         biome
         cargo
         cargo-binstall
-        # commitlint
+        commitlint
         corepack_24
         dive
         eslint
         garage_2
         git-cliff
+        github-copilot-cli
         gitleaks
         glab
         gnumake
@@ -147,8 +148,7 @@
         kubernetes-helm
         kyverno
         markdownlint-cli2
-        minio-client
-        mysql-client
+        mariadb.client
         nil
         nixos-rebuild
         nodejs_24
@@ -168,7 +168,6 @@
         ssm-session-manager-plugin
         stylelint
         systemctl-tui
-        tailscale
         trino-cli
         typos
         typos-lsp
@@ -177,6 +176,7 @@
         # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.hugo
+        unstable-pkgs.tailscale
         unstable-pkgs.terraform
 
         # Custom
@@ -196,8 +196,7 @@
         else []
       )
       ++ (with unstable-pkgs.nodePackages; [
-        aws-cdk
-        # cdktf-cli
+        # aws-cdk
         prettier
       ])
       ++ [
@@ -212,6 +211,7 @@
 
     programs = {
       programs.atuin.package = unstable-pkgs.atuin;
+      programs.awscli.package = unstable-pkgs.awscli2;
 
       programs.atuin.enable = true;
       programs.awscli.enable = true;
@@ -223,6 +223,7 @@
       programs.lazygit.enable = true;
       programs.poetry.enable = true;
       programs.starship.enable = true;
+      programs.uv.enable = true;
       # programs.vim.enable = true;
     };
   in (
@@ -262,7 +263,7 @@
 
       homeManagerModules.default = {...}:
         {
-          home.stateVersion = "25.05";
+          home.stateVersion = "25.11";
           home.packages = packages;
         }
         // programs;
