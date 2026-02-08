@@ -44,9 +44,8 @@
       version = "1.0.0";
       src = npm-global-src.outPath;
       npmDepsHash =
-        "sha256-faNoOqWfz9OJHC1P9GQfNrrehW+JZMNbg6f97F57g8M="
-        # pkgs.lib.fakeHash
-        ;
+        # pkgs.lib.fakeHash;
+        "sha256-IHECVDTJdouoVW4Mm/SFg5eJQDjHrYPj+XcH9VxbD8o=";
       dontNpmBuild = true;
       dontNpmPrune = true;
 
@@ -138,7 +137,6 @@
         eslint
         garage_2
         git-cliff
-        github-copilot-cli
         gitleaks
         glab
         gnumake
@@ -153,7 +151,6 @@
         nixos-rebuild
         nodejs_24
         openssl.dev
-        oxlint
         postgresql
         pre-commit
         pyright
@@ -175,12 +172,16 @@
 
         # Unstable
         unstable-pkgs.atuin
+        unstable-pkgs.github-copilot-cli
         unstable-pkgs.hugo
+        unstable-pkgs.oxfmt
+        unstable-pkgs.oxlint
         unstable-pkgs.tailscale
         unstable-pkgs.terraform
+        unstable-pkgs.tsgolint
 
         # Custom
-        copilot-cli-fix.packages.${system}.default
+        # copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
       ]
@@ -212,6 +213,7 @@
     programs = {
       programs.atuin.package = unstable-pkgs.atuin;
       programs.awscli.package = unstable-pkgs.awscli2;
+      programs.starship.package = unstable-pkgs.starship;
 
       programs.atuin.enable = true;
       programs.awscli.enable = true;
@@ -234,7 +236,7 @@
 
         modules = [
           {
-            home.stateVersion = "25.05";
+            home.stateVersion = "25.11";
             home.username = username;
             home.homeDirectory = homeDirectory;
 

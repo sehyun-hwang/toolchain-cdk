@@ -2,7 +2,8 @@
   "name": "global-bin",
   "version": "1.0.0",
   "dependencies": {
-    "artillery": "^2.0.26",
+    "artillery": "2.0.26",
+    "projen": "^0.99.10",
     "serve": "^14.2.3",
     "showdown": "^2.1.0",
     "v8r": "^5.1.0",
