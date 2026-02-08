@@ -1,9 +1,9 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
@@ -44,9 +44,8 @@
       version = "1.0.0";
       src = npm-global-src.outPath;
       npmDepsHash =
-        "sha256-3byY2y3hhkKRLO/XoOJMf1vBEUjeat/Olqm6ZALQMfw="
-        # pkgs.lib.fakeHash
-        ;
+        # pkgs.lib.fakeHash;
+        "sha256-IHECVDTJdouoVW4Mm/SFg5eJQDjHrYPj+XcH9VxbD8o=";
       dontNpmBuild = true;
       dontNpmPrune = true;
 
@@ -129,54 +128,67 @@
         asciinema
         aws-vault
         black
+        biome
         cargo
-        corepack_22
+        cargo-binstall
+        commitlint
+        corepack_24
         dive
         eslint
+        garage_2
+        git-cliff
         gitleaks
+        glab
         gnumake
         hadolint
         infisical
         jq
         kubernetes-helm
+        kyverno
         markdownlint-cli2
-        minio-client
+        mariadb.client
         nil
         nixos-rebuild
         nodejs_24
         openssl.dev
-        oxlint
         postgresql
         pre-commit
+        pyright
+        redis
         ruff
         rustc
         rustfmt
         shellcheck
         shfmt
         skopeo
+        sqlfluff
         ssm-session-manager-plugin
         stylelint
         systemctl-tui
-        tailscale
         trino-cli
         typos
         typos-lsp
-        yq
+        yq-go
 
         # Unstable
         unstable-pkgs.atuin
+        unstable-pkgs.github-copilot-cli
         unstable-pkgs.hugo
+        unstable-pkgs.oxfmt
+        unstable-pkgs.oxlint
+        unstable-pkgs.tailscale
         unstable-pkgs.terraform
+        unstable-pkgs.tsgolint
 
         # Custom
-        copilot-cli-fix.packages.${system}.default
+        # copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
       ]
       ++ (
         if pkgs.stdenv.isLinux
         then [
-          k3s_1_31
+          k3s_1_34
           (lib.hiPrio unstable-pkgs.containerd)
           nerdctl-pkgs.nerdctl
           containerd-rootless-setuptool
@@ -185,8 +197,7 @@
         else []
       )
       ++ (with unstable-pkgs.nodePackages; [
-        aws-cdk
-        # cdktf-cli
+        # aws-cdk
         prettier
       ])
       ++ [
@@ -201,6 +212,8 @@
 
     programs = {
       programs.atuin.package = unstable-pkgs.atuin;
+      programs.awscli.package = unstable-pkgs.awscli2;
+      programs.starship.package = unstable-pkgs.starship;
 
       programs.atuin.enable = true;
       programs.awscli.enable = true;
@@ -212,7 +225,8 @@
       programs.lazygit.enable = true;
       programs.poetry.enable = true;
       programs.starship.enable = true;
-      programs.vim.enable = true;
+      programs.uv.enable = true;
+      # programs.vim.enable = true;
     };
   in (
     {
@@ -222,7 +236,7 @@
 
         modules = [
           {
-            home.stateVersion = "25.05";
+            home.stateVersion = "25.11";
             home.username = username;
             home.homeDirectory = homeDirectory;
 
@@ -251,7 +265,7 @@
 
       homeManagerModules.default = {...}:
         {
-          home.stateVersion = "25.05";
+          home.stateVersion = "25.11";
           home.packages = packages;
         }
         // programs;
