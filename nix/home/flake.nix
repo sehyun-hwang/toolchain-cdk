@@ -1,5 +1,7 @@
 {
   inputs = {
+    # https://github.com/NixOS/nixpkgs/commits/nixos-25.11/?author=nixpkgs-ci%5Bbot%5D
+    # nixpkgs.url = "github:NixOS/nixpkgs/68f0bc4095d6034af52a098f233b7d73ba383d3b";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
@@ -45,7 +47,7 @@
       src = npm-global-src.outPath;
       npmDepsHash =
         # pkgs.lib.fakeHash;
-        "sha256-IHECVDTJdouoVW4Mm/SFg5eJQDjHrYPj+XcH9VxbD8o=";
+        "sha256-6CUCW4j1B+1RSZEV9WiOZKTw+KtJQBqeHrWfo1nQJNk=";
       dontNpmBuild = true;
       dontNpmPrune = true;
 
@@ -127,28 +129,31 @@
         alejandra
         asciinema
         aws-vault
-        black
         biome
+        black
         cargo
         cargo-binstall
         commitlint
         corepack_24
         dive
         eslint
+        findutils
         garage_2
         git-cliff
         gitleaks
         glab
         gnumake
         hadolint
+        htop
         infisical
         jq
         kubernetes-helm
         kyverno
-        markdownlint-cli2
         mariadb.client
+        markdownlint-cli2
         nil
         nixos-rebuild
+        nmap
         nodejs_24
         openssl.dev
         postgresql
@@ -168,10 +173,14 @@
         trino-cli
         typos
         typos-lsp
+        watch
+        wget
         yq-go
 
         # Unstable
         unstable-pkgs.atuin
+        unstable-pkgs.aws-cdk-cli
+        unstable-pkgs.devcontainer
         unstable-pkgs.github-copilot-cli
         unstable-pkgs.hugo
         unstable-pkgs.oxfmt
@@ -196,10 +205,6 @@
         ]
         else []
       )
-      ++ (with unstable-pkgs.nodePackages; [
-        # aws-cdk
-        prettier
-      ])
       ++ [
         (pkgs.python311.withPackages
           (p: [
@@ -215,18 +220,19 @@
       programs.awscli.package = unstable-pkgs.awscli2;
       programs.starship.package = unstable-pkgs.starship;
 
+      # programs.vim.enable = true;
       programs.atuin.enable = true;
       programs.awscli.enable = true;
       programs.bat.enable = true;
       programs.fish.enable = true;
       programs.gh.enable = true;
       programs.git.enable = true;
+      programs.git.lfs.enable = true;
       programs.go.enable = true;
       programs.lazygit.enable = true;
       programs.poetry.enable = true;
       programs.starship.enable = true;
       programs.uv.enable = true;
-      # programs.vim.enable = true;
     };
   in (
     {

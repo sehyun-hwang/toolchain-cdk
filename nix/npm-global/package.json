@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "dependencies": {
     "artillery": "2.0.26",
-    "projen": "^0.99.10",
-    "serve": "^14.2.3",
+    "diffchecker": "^0.3.2",
+    "projen": "^0.99.48",
+    "serve": "^14.2.6",
     "showdown": "^2.1.0",
-    "v8r": "^5.1.0",
-    "vite": "^6.0.7",
-    "wscat": "^6.0.1"
+    "v8r": "^6.0.0",
+    "vite": "^8.0.8",
+    "wscat": "^6.1.0"
   },
   "overrides": {
     "artillery-engine-playwright": "npm:dry-uninstall"
