@@ -1,5 +1,5 @@
 {
-  system = "aarch64-darwin";
-  username = "hwangsehyun";
-  homeDirectory = "/Users/hwangsehyun";
+  system = "aarch64-linux";
+  username = "aldur";
+  homeDirectory = "/Users/aldur";
 }

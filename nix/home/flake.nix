@@ -40,11 +40,11 @@
       src = npm-global-src.outPath;
       npmDepsHash =
         # pkgs.lib.fakeHash;
-        "sha256-2varRRmsPQVs/H/koIuX1LLzbnc+/kZF9L/fasNb5qs=";
+        "sha256-ALdUMqPOruQNQ4jwLSPCEazW1UFfVSo1oi/L1ei+ALc=";
       dontNpmBuild = true;
       dontNpmPrune = true;
-
-      nodejs = pkgs.nodejs_22;
+      npmDepsFetcherVersion = 2;
+      nodejs = pkgs.nodejs_24;
       installPhase = ''
         mkdir -p $out/lib $out/bin
         cp -r * $out/lib/
@@ -170,7 +170,7 @@
         wget
         yq-go
         aws-sam-cli
-
+        cdktn-cli
         # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.aws-cdk-cli
@@ -180,7 +180,7 @@
         unstable-pkgs.oxfmt
         unstable-pkgs.oxlint
         unstable-pkgs.tailscale
-        unstable-pkgs.terraform
+#  terraform
         unstable-pkgs.tsgolint
 
         # Custom
