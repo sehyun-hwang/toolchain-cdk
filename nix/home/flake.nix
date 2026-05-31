@@ -121,11 +121,13 @@
         act
         alejandra
         asciinema
-        aws-vault
+        aws-sam-cli
+        basedpyright
         biome
         black
         cargo
         cargo-binstall
+        cdktn-cli
         commitlint
         corepack_24
         dive
@@ -151,7 +153,7 @@
         openssl.dev
         postgresql
         pre-commit
-        basedpyright
+        python311
         redis
         ruff
         rustc
@@ -169,8 +171,7 @@
         watch
         wget
         yq-go
-        aws-sam-cli
-        cdktn-cli
+
         # Unstable
         unstable-pkgs.atuin
         unstable-pkgs.aws-cdk-cli
@@ -180,11 +181,10 @@
         unstable-pkgs.oxfmt
         unstable-pkgs.oxlint
         unstable-pkgs.tailscale
-#  terraform
+        unstable-pkgs.terraform
         unstable-pkgs.tsgolint
 
         # Custom
-        # copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
       ]
