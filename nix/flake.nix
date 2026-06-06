@@ -1,13 +1,13 @@
 rec {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
-    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     nix-index-database.url = "github:nix-community/nix-index-database";
 
-    addon.url = "flake:home-addon";
+    addon.url = "path:./home";
     addon.inputs.nixpkgs.follows = "nixpkgs";
     addon.inputs.home-manager.follows = "home-manager";
 
@@ -16,18 +16,19 @@ rec {
     addon.inputs.npm-global-src.follows = "npm-global-src";
   };
 
+  inputs.nixos-crostini.url = "github:aldur/nixos-crostini";
+
+  # Optional:
+  inputs.nixos-crostini.inputs.nixpkgs.follows = "nixpkgs";
+
   nixConfig = {
     extra-substituters = [
       "https://nix-community.cachix.org"
       # "s3://vscodeec2stack-nixcachebucket0b0ca413-ym0o7vipjfti?region=ap-northeast-1"
-      "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
+      # "s3://vscodeec2stack-us-nixcachebucket0b0ca413-xbebyry8slzj?region=us-west-2"
     ];
-    extra-trusted-public-keys = [
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "s3:LS6iTIMsz7LS9yurWFwITUCY3k87zaLKoVBlssVqnpw="
-    ];
-    secret-key-files = /etc/nix/key.private;
-    post-build-hook = ./upload-to-cache.sh;
+    # secret-key-files = /etc/nix/key.private;
+    # post-build-hook = ./upload-to-cache.sh;
   };
 
   outputs = {
@@ -38,25 +39,23 @@ rec {
     nix-index-database,
     addon,
     npm-global-src,
+nixos-crostini
   }: {
-    nixosConfigurations.ec2-dev = nixpkgs.lib.nixosSystem rec {
-      system = "aarch64-linux";
+    nixosConfigurations.baguette-nixos = nixpkgs.lib.nixosSystem rec {      
+system = "aarch64-linux";
 
       modules = [
-        "${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"
+        # "${nixpkgs}/nixos/modules/virtualisation/amazon-image.nix"
         home-manager.nixosModules.home-manager
         vscode-server.nixosModules.default
         nix-index-database.nixosModules.nix-index
-
+nixos-crostini.nixosModules.baguette
         {
-          ec2.efi = true;
-          system.stateVersion = "24.11";
+          system.stateVersion = "26.05";
           nix.settings = {
-            experimental-features = ["nix-command" "flakes"];
-            substituters = nixConfig.extra-substituters;
-            trusted-public-keys = nixConfig.extra-trusted-public-keys;
-            secret-key-files = "/etc/nix/key.private";
-            post-build-hook = "/etc/nix/upload-to-cache.sh";
+            extra-experimental-features = ["nix-command" "flakes"];
+            # secret-key-files = "/etc/nix/key.private";
+            # post-build-hook = "/etc/nix/upload-to-cache.sh";
           };
           environment.etc."nix/upload-to-cache.sh" = {
             mode = "555";
@@ -70,39 +69,6 @@ rec {
             '';
           };
 
-          systemd.services.test-nvme1n1 = {
-            unitConfig.ConditionPathExists = "/dev/nvme1n1";
-            script = ''
-              lsblk -N /dev/nvme1n1 | grep 'Amazon EC2 NVMe Instance Storage'
-            '';
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = "yes";
-            };
-          };
-          fileSystems."/media" = {
-            device = "/dev/nvme1n1"; # TODO
-            fsType = "ext4";
-            autoFormat = true;
-            options = [
-              "x-systemd.requires=test-nvme1n1.service"
-              "noauto"
-            ];
-          };
-          fileSystems."/mnt" = {
-            device = "/dev/nvme1n1";
-            fsType = "ext4";
-            autoResize = true;
-            options = ["nofail"];
-          };
-          swapDevices = [
-            {
-              device = "/var/lib/swapfile";
-              size = 4 * 1024; # MB
-              options = ["nofail"];
-            }
-          ];
-
           virtualisation = {
             podman.enable = true;
             podman.dockerCompat = true;
@@ -110,17 +76,12 @@ rec {
           };
 
           users.mutableUsers = false;
-          # services.amazon-ssm-agent.enable = nixpkgs.lib.mkForce false;
-          users.users.ssm-user = {
-            uid = 1010;
-          };
-          users.users.ec2-user = {
+          users.users.aldur = {
             isNormalUser = true;
-            home = "/home/ec2-user";
+            home = "/home/aldur";
             extraGroups = [
               "wheel"
               "networkmanager"
-              "ec2-user"
             ];
             openssh.authorizedKeys.keys = [
               "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIONFCHikp7AoWYCj8aCtIO1rBAN0hB2gwtoEM/LjWA5p centos@www.hwangsehyun.com"
@@ -128,7 +89,6 @@ rec {
             uid = 1000;
             linger = true;
           };
-          users.groups.ec2-user.gid = 1000;
 
           services.openssh.settings.PasswordAuthentication = false;
           # https://infosec.mozilla.org/guidelines/openssh#modern-openssh-67
@@ -141,7 +101,7 @@ rec {
           ];
           security.sudo.extraRules = [
             {
-              users = ["ec2-user"];
+              users = ["aldur"];
               commands = [
                 {
                   command = "ALL";
@@ -160,8 +120,6 @@ rec {
 
         (
           {pkgs, ...}: {
-            systemd.services.test-nvme1n1.path = [pkgs.util-linux pkgs.gnugrep];
-
             programs.fish.enable = true;
             environment.systemPackages = with pkgs; [
               buildkit
@@ -178,7 +136,7 @@ rec {
               wget
               zip
             ];
-            users.users.ec2-user = {
+            users.users.aldur = {
               shell = pkgs.fish;
             };
 
@@ -189,160 +147,17 @@ rec {
           }
         )
 
-        (
-          {
-            config,
-            lib,
-            pkgs,
-            ...
-          }: let
-            cacert-unbundled-pem = pkgs.stdenv.mkDerivation {
-              pname = "cacert-unbundled-pem";
-              version = "0.0.1";
-              src = pkgs.cacert.unbundled;
-
-              buildPhase = ''
-                for input in etc/ssl/certs/*; do
-                  output=$(echo $input | sed 's/:.*\.crt$/.pem/')
-                  echo $input $output
-                  ${pkgs.openssl_3_3}/bin/openssl x509 -in $input -out $output
-                done
-
-                ${pkgs.openssl_3_3}/bin/c_rehash etc/ssl/certs
-              '';
-
-              installPhase = ''
-                mkdir -p $out/etc/ssl
-                mv etc/ssl/certs $out/etc/ssl/certs
-              '';
-            };
-
-            log-file = "/var/log/ec2-instance-connect.log";
-
-            ec2-instance-connect-inputs = with pkgs; [
-              coreutils
-              curl
-              findutils
-              gawk
-              gnugrep
-              gnused
-              logger
-              openssh
-              openssl_3_3
-            ];
-
-            ec2-instance-connect = pkgs.resholve.mkDerivation {
-              pname = "ec2-instance-connect";
-              version = "0.0.1";
-
-              src = pkgs.fetchFromGitHub {
-                owner = "aws";
-                repo = "aws-ec2-instance-connect-config";
-                rev = "1.1.17";
-                sha256 = "sha256-XXrVcmgsYFOj/1cD45ulFry5gY7XOkyhmDV7yXvgNhI=";
-              };
-
-              buildPhase = ''
-                cat > hello <<EOF
-                #! $SHELL
-                echo "Hello Nixers!"
-                EOF
-                chmod +x hello
-                sed -i "s=/usr/bin/==g; 1 ! s=/bin/==g; s=>\s*/dev/null=>> ${log-file}=g; s=trap 'rm=trap '${pkgs.coreutils}/bin/rm="  src/bin/*
-                grep underscored src/bin/eic_parse_authorized_keys
-              '';
-
-              installPhase = ''
-                install -D -t $out/bin hello src/bin/eic_curl_authorized_keys src/bin/eic_parse_authorized_keys
-              '';
-
-              solutions.curl = {
-                interpreter = "/bin/sh";
-                scripts = ["bin/eic_curl_authorized_keys"];
-                inputs = ec2-instance-connect-inputs;
-                fix = {
-                  "$OPENSSL" = ["${pkgs.openssl_3_3}/bin/openssl"];
-                  "$ca_path" = ["${cacert-unbundled-pem}/etc/ssl/certs"];
-                };
-                execer = [
-                  "cannot:${pkgs.gnused}/bin/sed"
-                  "cannot:${pkgs.findutils}/bin/find"
-                  "cannot:${pkgs.gawk}/bin/awk"
-                  "cannot:${pkgs.openssh}/bin/ssh-keygen"
-                ];
-                keep = {
-                  "$DIR" = true;
-                };
-              };
-
-              solutions.parse = {
-                interpreter = "/bin/sh";
-                scripts = ["bin/eic_parse_authorized_keys"];
-                inputs = ec2-instance-connect-inputs;
-                execer = [
-                  "cannot:${pkgs.gnused}/bin/sed"
-                  "cannot:${pkgs.findutils}/bin/find"
-                  "cannot:${pkgs.gawk}/bin/awk"
-                  "cannot:${pkgs.openssh}/bin/ssh-keygen"
-                ];
-                keep = {
-                  "$DIR" = true;
-                  "$OPENSSL" = true;
-                };
-              };
-            };
-          in {
-            system.activationScripts.createEc2InstanceConnectLogFile = lib.stringAfter ["var"] ''
-              install -m 666 /dev/null /var/log/ec2-instance-connect.log
-            '';
-            environment.systemPackages = [ec2-instance-connect];
-            environment.etc.eic_run_authorized_keys = {
-              mode = "0755";
-              # @TODO Check if the hash of ssh key from metadata matches the ssh key from argument. If match, do not call eic_curl_authorized_keys
-              text = ''
-                #!${pkgs.bash}/bin/sh
-                curl -H "X-aws-ec2-metadata-token: $(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")" http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
-                exec ${pkgs.coreutils}/bin/timeout 5s ${ec2-instance-connect}/bin/eic_curl_authorized_keys "$@"
-              '';
-            };
-            users.users.ec2-instance-connect = {
-              isSystemUser = true;
-              group = "nogroup";
-            };
-
-            services.openssh.authorizedKeysCommand = "/etc/eic_run_authorized_keys %u %f";
-            services.openssh.authorizedKeysCommandUser = "ec2-instance-connect";
-            # services.openssh.settings.LogLevel = "DEBUG3";
-
-            fileSystems."/mnt/efs" = {
-              # device = "fs-0bc069ca12afa12fe.efs.ap-northeast-1.amazonaws.com:/";
-              device = "172.31.33.129:/";
-              fsType = "nfs";
-              # https://docs.aws.amazon.com/efs/latest/ug/mounting-fs-mount-cmd-dns-name.html
-              options = [
-                "nfsvers=4.1"
-                "rsize=1048576"
-                "wsize=1048576"
-                "hard"
-                "timeo=600"
-                "retrans=2"
-                "noresvport"
-              ];
-            };
-          }
-        )
-
         {
           home-manager.sharedModules = [
             vscode-server.homeModules.default
-            nix-index-database.hmModules.nix-index
+            nix-index-database.homeModules.nix-index
           ];
 
-          home-manager.users.ec2-user = {pkgs, ...}: {
+          home-manager.users.aldur = {pkgs, ...}: {
             imports = [
               addon.homeManagerModules.default
             ];
-            home.stateVersion = "24.11";
+            home.stateVersion = "26.05";
             home.sessionPath = [
               "$HOME/.yarn/bin"
               "$HOME/.local/share/pnpm"
@@ -378,8 +193,10 @@ rec {
               sso_role_name = "AdministratorAccess";
             };
             programs.git = {
-              userName = "Sehyun Hwang";
-              userEmail = "hwanghyun3@gmail.com";
+              settings = {
+                user.name = "Sehyun Hwang";
+                user.email = "hwanghyun3@gmail.com";
+              };
               lfs.enable = true;
               ignores = ["DS_Store"];
             };

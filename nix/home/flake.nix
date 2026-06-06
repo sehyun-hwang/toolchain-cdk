@@ -1,20 +1,16 @@
 {
   inputs = {
-    # https://github.com/NixOS/nixpkgs/commits/nixos-25.11/?author=nixpkgs-ci%5Bbot%5D
+    # https://github.com/NixOS/nixpkgs/commits/nixos-26.05/?author=nixpkgs-ci%5Bbot%5D
     # nixpkgs.url = "github:NixOS/nixpkgs/68f0bc4095d6034af52a098f233b7d73ba383d3b";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-nerdctl.url = "github:06kellyjac/nixpkgs/nerdctl";
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
-    copilot-cli-fix.url = "github:meatcoder/nix-copilot-cli/2595f0517c88b1ca68faff2d3132e498e7c8e349";
-    copilot-cli-fix.inputs.nixpkgs.follows = "nixpkgs";
 
     vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
     vscode-cli-json-path.flake = false;
-
     npm-global-src.url = "../npm-global";
     npm-global-src.flake = false;
   };
@@ -23,10 +19,8 @@
     self,
     nixpkgs,
     nixpkgs-unstable,
-    nixpkgs-nerdctl,
     home-manager,
     vscode-cli-json-path,
-    copilot-cli-fix,
     flake-utils,
     npm-global-src,
   }: let
@@ -39,7 +33,6 @@
       inherit system;
       config.allowUnfree = true;
     };
-    nerdctl-pkgs = import nixpkgs-nerdctl {inherit system;};
 
     nodejs-global-bin = pkgs.buildNpmPackage {
       pname = "global-bin";
@@ -47,11 +40,11 @@
       src = npm-global-src.outPath;
       npmDepsHash =
         # pkgs.lib.fakeHash;
-        "sha256-6CUCW4j1B+1RSZEV9WiOZKTw+KtJQBqeHrWfo1nQJNk=";
+        "sha256-ALdUMqPOruQNQ4jwLSPCEazW1UFfVSo1oi/L1ei+ALc=";
       dontNpmBuild = true;
       dontNpmPrune = true;
-
-      nodejs = pkgs.nodejs_22;
+      npmDepsFetcherVersion = 2;
+      nodejs = pkgs.nodejs_24;
       installPhase = ''
         mkdir -p $out/lib $out/bin
         cp -r * $out/lib/
@@ -128,11 +121,13 @@
         act
         alejandra
         asciinema
-        aws-vault
+        aws-sam-cli
+        basedpyright
         biome
         black
         cargo
         cargo-binstall
+        cdktn-cli
         commitlint
         corepack_24
         dive
@@ -158,7 +153,7 @@
         openssl.dev
         postgresql
         pre-commit
-        pyright
+        python311
         redis
         ruff
         rustc
@@ -190,7 +185,6 @@
         unstable-pkgs.tsgolint
 
         # Custom
-        # copilot-cli-fix.packages.${system}.default
         nodejs-global-bin
         vscode-cli
       ]
@@ -199,21 +193,12 @@
         then [
           k3s_1_34
           (lib.hiPrio unstable-pkgs.containerd)
-          nerdctl-pkgs.nerdctl
+          nerdctl
           containerd-rootless-setuptool
           docker-buildx-desktop
         ]
         else []
-      )
-      ++ [
-        (pkgs.python311.withPackages
-          (p: [
-            "aws-shell"
-          ]))
-      ]
-      ++ (with python311Packages; [
-        pip
-      ]);
+      );
 
     programs = {
       programs.atuin.package = unstable-pkgs.atuin;
@@ -242,13 +227,13 @@
 
         modules = [
           {
-            home.stateVersion = "25.11";
+            home.stateVersion = "26.05";
             home.username = username;
             home.homeDirectory = homeDirectory;
 
             nix.package = pkgs.nix;
             nix.settings = {
-              experimental-features = ["nix-command" "flakes"];
+              extra-experimental-features = ["nix-command" "flakes"];
             };
 
             programs.home-manager.enable = true;
@@ -271,7 +256,7 @@
 
       homeManagerModules.default = {...}:
         {
-          home.stateVersion = "25.11";
+          home.stateVersion = "26.05";
           home.packages = packages;
         }
         // programs;
