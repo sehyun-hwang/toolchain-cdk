@@ -3,6 +3,7 @@
     "addon": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "hjem": "hjem",
         "home-manager": [
           "home-manager"
         ],
@@ -12,8 +13,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "npm-global-src": [
           "npm-global-src"
-        ],
-        "vscode-cli-json-path": "vscode-cli-json-path"
+        ]
       },
       "locked": {
         "path": "./home",
@@ -58,6 +58,27 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "hjem": {
+      "inputs": {
+        "nixpkgs": [
+          "addon",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790081753,
+        "narHash": "sha256-tycoVCB2KSVdy9ERT1lJGHdP9Hf4FHanaEY25hUxylw=",
+        "owner": "feel-co",
+        "repo": "hjem",
+        "rev": "cef02450f2c18a7e2b9297ea8d366f9a597254f7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "feel-co",
+        "repo": "hjem",
         "type": "github"
       }
     },
@@ -271,18 +292,6 @@
         "owner": "nix-systems",
         "repo": "default",
         "type": "github"
-      }
-    },
-    "vscode-cli-json-path": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-jE72pQEOX+jzrQQ2aoX8D7djtAB1BagyTJ7v/X7oLBY=",
-        "type": "file",
-        "url": "https://code.visualstudio.com/sha"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://code.visualstudio.com/sha"
       }
     },
     "vscode-server": {

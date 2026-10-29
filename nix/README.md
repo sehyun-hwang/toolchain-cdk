@@ -9,6 +9,10 @@ nerdctl build . -t nix-ec2-dev
 
 ## [Home](./home)
 
+The home package set includes `docker-buildx` and the `hjem` CLI. Hjem is
+installed as a CLI only; Home Manager continues to manage the configuration.
+Garage (`garage_2`) is installed only on Linux because it does not support macOS.
+
 [Home Manager](https://github.com/nix-community/home-manager) `switch`
 
 ```sh

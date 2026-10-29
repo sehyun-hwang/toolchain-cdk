@@ -6,11 +6,11 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    hjem.url = "github:feel-co/hjem";
+    hjem.inputs.nixpkgs.follows = "nixpkgs";
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    vscode-cli-json-path.url = "https://code.visualstudio.com/sha";
-    vscode-cli-json-path.flake = false;
     npm-global-src.url = "../npm-global";
     npm-global-src.flake = false;
   };
@@ -20,7 +20,7 @@
     nixpkgs,
     nixpkgs-unstable,
     home-manager,
-    vscode-cli-json-path,
+    hjem,
     flake-utils,
     npm-global-src,
   }: let
@@ -68,53 +68,6 @@
       '';
     };
 
-    docker-buildx-desktop = pkgs.stdenv.mkDerivation rec {
-      pname = "docker-buildx-desktop";
-      version = "v0.21.2-desktop.1";
-      src = builtins.fetchurl {
-        url = "https://github.com/docker/buildx-desktop/releases/download/${version}/buildx-${version}.linux-arm64";
-        sha256 = "sha256:0jfqfqlnz15mqiz014k7s13yigb168p72q3yqnb1q1jj1lvkc3mn";
-      };
-
-      dontUnpack = true;
-      installPhase = ''
-        install -DvT $src $out/bin/docker-buildx
-      '';
-    };
-
-    vscode-cli-os =
-      if pkgs.stdenv.isDarwin
-      then "darwin"
-      else "alpine";
-    vscode-cli-arch =
-      if pkgs.stdenv.isAarch64
-      then "arm64"
-      else "x64";
-    vscode-cli-source-json = builtins.fromJSON (builtins.readFile vscode-cli-json-path);
-    vscode-cli-product =
-      nixpkgs.lib.lists.findFirst (
-        product:
-          product.build == "stable" && product.platform.os == "cli-${vscode-cli-os}-${vscode-cli-arch}"
-      )
-      null
-      vscode-cli-source-json.products;
-
-    vscode-cli = pkgs.stdenv.mkDerivation {
-      name = "vscode-cli";
-      version = vscode-cli-product.productVersion;
-      nativeBuildInputs = [pkgs.unzip];
-      src = pkgs.fetchurl {
-        url = vscode-cli-product.url;
-        sha256 = vscode-cli-product.sha256hash;
-      };
-
-      sourceRoot = ".";
-      installPhase = ''
-        ./code --version
-        install -Dvt $out/bin code
-      '';
-    };
-
     packages = with pkgs;
       [
         # Stable
@@ -131,9 +84,9 @@
         commitlint
         corepack_24
         dive
+        docker-buildx
         eslint
         findutils
-        garage_2
         git-cliff
         gitleaks
         glab
@@ -185,17 +138,17 @@
         unstable-pkgs.tsgolint
 
         # Custom
+        hjem.packages.${system}.hjem
         nodejs-global-bin
-        vscode-cli
       ]
       ++ (
         if pkgs.stdenv.isLinux
         then [
+          garage_2
           k3s_1_34
           (lib.hiPrio unstable-pkgs.containerd)
           nerdctl
           containerd-rootless-setuptool
-          docker-buildx-desktop
         ]
         else []
       );
